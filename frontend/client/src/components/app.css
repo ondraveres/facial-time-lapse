@@ -1,0 +1,21 @@
+
+#root{
+    font-family: 'Epilogue', sans-serif;
+    display: block;
+    background-color: aliceblue;
+    /* background-image: url('./../../../layered-waves-haikei.svg'); */
+    color:#001220;
+}
+
+
+.mycontainer{
+    width: 60%;
+    margin: auto;
+    display: block;
+    text-align: left;
+    padding-top: 40px;
+}
+.center{
+    text-align: center;
+}
+

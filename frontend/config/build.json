@@ -1,0 +1,5 @@
+{
+  "cdnPrefix": "$CDN_PREFIX",
+  "dockerRepo": "$DOCKER_REPO",
+  "dockerVersion": "$DOCKER_VERSION"
+}
