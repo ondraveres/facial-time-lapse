@@ -1,3 +1,4 @@
+import traceback
 import numpy
 import cv2
 import matplotlib.pyplot as plt
@@ -27,14 +28,17 @@ from notebooks.notebook_utils import Downloader, ENCODER_PATHS, INTERFACEGAN_PAT
 from notebooks.notebook_utils import run_alignment, crop_image, compute_transforms
 from utils.common import tensor2im
 from utils.inference_utils import run_on_batch, load_encoder, get_average_image
+import dex
+
+dex.eval()
 
 print(torch.cuda.current_device(), torch.cuda.get_device_name(0))
 
 experiment_type = 'restyle_pSp_ffhq'
 frames_between_images = 15
 
-# app = FaceAnalysis(providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
-# app.prepare(ctx_id=0, det_size=(640, 640))
+#app = FaceAnalysis(providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
+#app.prepare(ctx_id=0, det_size=(1024, 1024))
 
 
 EXPERIMENT_DATA_ARGS = {
@@ -84,12 +88,13 @@ def align_image(pathToImage):
     image_path = '../storage/'+unique_filename
     alligned_im.save(image_path)
 
-    # img = cv2.imread(image_path)
-    # faces = app.get(img)
+    age = round(dex.estimate(image_path)[0])
+    #img = cv2.imread(image_path)
+    #faces = app.get(img)
 
-    # age = faces[0].age
+    #age = faces[0].age
 
-    return unique_filename, random.randint(3, 80)
+    return unique_filename, age
 
 
 def invertImage(pathToImage):
@@ -164,6 +169,7 @@ def saveImagesFromGoogleSearch(phrase, number_of_images):
     phrase2 = f'photo of {phrase} as a teenager'
     phrase3 = f'photo of young {phrase}'
     phrase4 = f'photo of {phrase}'
+
     search_term1 = urllib.parse.quote(phrase1.encode('utf8'))
     search_term2 = urllib.parse.quote(phrase2.encode('utf8'))
     search_term3 = urllib.parse.quote(phrase3.encode('utf8'))
@@ -177,10 +183,7 @@ def saveImagesFromGoogleSearch(phrase, number_of_images):
     second_page = requests.get(url_second_page)
     third_page = requests.get(url_third_page)
     fourth_page = requests.get(url_fourth_page)
-    print('first_page', first_page.json()['searchInformation'])
-    print('second_page', second_page.json()['searchInformation'])
-    print('third_page', third_page.json()['searchInformation'])
-    print('fourth_page', fourth_page.json()['searchInformation'])
+
     pathsAndAges = []
     aligned_images = []
 
@@ -193,7 +196,7 @@ def saveImagesFromGoogleSearch(phrase, number_of_images):
                 print(page.json()["items"][i]["link"])
                 im = Image.open(requests.get(page.json()["items"][i]["link"], headers={
                     'User-Agent': 'Facial time lapse bot/0.0 ondra.veres@gmail.com'}, stream=True).raw)
-                im.save("temp.jpg")
+                im.convert('RGB').save("temp.jpg", 'jpeg')
                 path, age = align_image("temp.jpg")
                 new_aligned_image = Image.open('../storage/'+path)
                 min_loss = 10000000000000000000000000
@@ -204,6 +207,7 @@ def saveImagesFromGoogleSearch(phrase, number_of_images):
                         min_loss = lossv
                 if min_loss < 70:
                     raise Exception("image is duplicate")
+
                 aligned_images.append(new_aligned_image)
 
                 pathsAndAges.append((path, age))
@@ -216,5 +220,6 @@ def saveImagesFromGoogleSearch(phrase, number_of_images):
                     done = 2
                     print('could not download')
                 print(e, 'failed looping')
+                print(traceback.format_exc())
                 continue
     return pathsAndAges

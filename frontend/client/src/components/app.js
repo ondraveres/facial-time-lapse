@@ -101,25 +101,33 @@ export default class extends React.Component {
 
 
         <div className="mx-auto container flex justify-evenly flex-wrap">
-          <div className=" w-10/12 mx-auto inline-block my-4">
-            <div className="shadow sm:rounded-md sm:overflow-hidden">
-              <div className="px-4 py-4 bg-white space-y-6 sm:p-6">
+          <div className=" w-96 mx-auto inline-block">
+            <div className="md:mt-0 md:col-span-2">
+              <div className="shadow sm:rounded-md sm:overflow-hidden">
+                <div className="px-4 py-4 bg-white space-y-6 sm:p-6">
+                  {/* <h3 className="font-medium leading-tight text-3xl mt-0 mb-2 text-blue-600">First image</h3> */}
+                  <h1 className="text-3xl font-medium text-gray-900 text-center">Result timelapse</h1>
 
-                {/* <h1 className="text-3xl font-medium text-gray-900 text-center">{this.props.id}</h1> */}
+                  <form className="col-span-6 sm:col-span-3">
 
-
-
-                <div className="justify-around flex">
-
-                  <Select />
+                    <div className="py-3 text-left flex justify-center">
+                      <button
+                        type="submit"
+                        className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      >
+                        Generate gif
+                      </button>
+                    </div>
+                  </form>
                 </div>
-
-
               </div>
             </div>
-          </div >
+          </div>
         </div>
-      </div>
+
+        <div className=" h-10"></div >
+
+      </div >
     );
   }
 }
