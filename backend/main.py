@@ -17,7 +17,7 @@ import uuid
 
 import cv2
 import numpy as np
-#import insightface
+# import insightface
 from insightface.app import FaceAnalysis
 from insightface.data import get_image as ins_get_image
 
@@ -33,8 +33,8 @@ print(torch.cuda.current_device(), torch.cuda.get_device_name(0))
 experiment_type = 'restyle_pSp_ffhq'
 frames_between_images = 15
 
-#app = FaceAnalysis(providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
-#app.prepare(ctx_id=0, det_size=(640, 640))
+# app = FaceAnalysis(providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
+# app.prepare(ctx_id=0, det_size=(640, 640))
 
 
 EXPERIMENT_DATA_ARGS = {
@@ -79,14 +79,15 @@ img_transforms = EXPERIMENT_ARGS['transform']
 
 def align_image(pathToImage):
     alligned_im = run_alignment(pathToImage)
+    os.remove(pathToImage)
     unique_filename = str(uuid.uuid4())+'.jpg'
     image_path = '../storage/'+unique_filename
     alligned_im.save(image_path)
 
-    #img = cv2.imread(image_path)
-    #faces = app.get(img)
+    # img = cv2.imread(image_path)
+    # faces = app.get(img)
 
-    #age = faces[0].age
+    # age = faces[0].age
 
     return unique_filename, random.randint(3, 80)
 
@@ -159,44 +160,61 @@ def loss(original_image, generated_image):
 
 
 def saveImagesFromGoogleSearch(phrase, number_of_images):
-    cropped_images = []
-    image_paths = []
-    search_term = urllib.parse.quote(phrase.encode('utf8'))
+    phrase1 = f'photo of {phrase} as a kid'
+    phrase2 = f'photo of {phrase} as a teenager'
+    phrase3 = f'photo of young {phrase}'
+    phrase4 = f'photo of {phrase}'
+    search_term1 = urllib.parse.quote(phrase1.encode('utf8'))
+    search_term2 = urllib.parse.quote(phrase2.encode('utf8'))
+    search_term3 = urllib.parse.quote(phrase3.encode('utf8'))
+    search_term4 = urllib.parse.quote(phrase4.encode('utf8'))
 
-    url_first_page = f'https://customsearch.googleapis.com/customsearch/v1?cr=asd&cx=b0aeb7e24cc9a435d&exactTerms={search_term}&imgType=face&num={number_of_images}&safe=active&searchType=image&filter=1&key=AIzaSyCwBdmXc5vg4GC3dEK2iDZC0kuXFjKe6-U&start=1'
-    url_second_page = f'https://customsearch.googleapis.com/customsearch/v1?cr=asd&cx=b0aeb7e24cc9a435d&exactTerms={search_term}&imgType=face&num={number_of_images}&safe=active&searchType=image&filter=1&key=AIzaSyCwBdmXc5vg4GC3dEK2iDZC0kuXFjKe6-U&start=21'
+    url_first_page = f'https://customsearch.googleapis.com/customsearch/v1?cr=asd&cx=b0aeb7e24cc9a435d&q={search_term1}&imgType=face&num={number_of_images}&safe=active&searchType=image&filter=1&key=AIzaSyAxeJGJ-oVB1S5QppevK64MvKWgn7Y-oDU&start=1'
+    url_second_page = f'https://customsearch.googleapis.com/customsearch/v1?cr=asd&cx=b0aeb7e24cc9a435d&q={search_term2}&imgType=face&imgSize=MEDIUM&num={number_of_images}&safe=active&searchType=image&filter=1&key=AIzaSyAxeJGJ-oVB1S5QppevK64MvKWgn7Y-oDU&start=1'
+    url_third_page = f'https://customsearch.googleapis.com/customsearch/v1?cr=asd&cx=b0aeb7e24cc9a435d&q={search_term3}&imgType=face&imgSize=MEDIUM&num={number_of_images}&safe=active&searchType=image&filter=1&key=AIzaSyAxeJGJ-oVB1S5QppevK64MvKWgn7Y-oDU&start=1'
+    url_fourth_page = f'https://customsearch.googleapis.com/customsearch/v1?cr=asd&cx=b0aeb7e24cc9a435d&q={search_term4}&imgType=face&imgSize=MEDIUM&num={number_of_images}&safe=active&searchType=image&filter=1&key=AIzaSyAxeJGJ-oVB1S5QppevK64MvKWgn7Y-oDU&start=1'
     first_page = requests.get(url_first_page)
     second_page = requests.get(url_second_page)
+    third_page = requests.get(url_third_page)
+    fourth_page = requests.get(url_fourth_page)
+    print('first_page', first_page.json()['searchInformation'])
+    print('second_page', second_page.json()['searchInformation'])
+    print('third_page', third_page.json()['searchInformation'])
+    print('fourth_page', fourth_page.json()['searchInformation'])
+    pathsAndAges = []
+    aligned_images = []
 
-    images = []
-
-    c = 0
-    for page in [first_page, second_page]:
-        for i in range(number_of_images):
+    for page in [first_page, second_page, third_page, fourth_page]:
+        done = 0
+        i = 0
+        while done < 2:
             try:
-                if len(cropped_images) > 4:
-                    continue
+                print('printing')
+                print(page.json()["items"][i]["link"])
                 im = Image.open(requests.get(page.json()["items"][i]["link"], headers={
-                                'User-Agent': 'Facial time lapse bot/0.0 ondra.veres@gmail.com'}, stream=True).raw)
-                im.save(f"{c}.jpg")
-                alligned_im = run_alignment(f"{c}.jpg")
+                    'User-Agent': 'Facial time lapse bot/0.0 ondra.veres@gmail.com'}, stream=True).raw)
+                im.save("temp.jpg")
+                path, age = align_image("temp.jpg")
+                new_aligned_image = Image.open('../storage/'+path)
                 min_loss = 10000000000000000000000000
-                for cropped_image in cropped_images:
-                    lossv = loss(numpy.asarray(alligned_im),
-                                 numpy.asarray(cropped_image))
+                for aligned_image in aligned_images:
+                    lossv = loss(numpy.asarray(new_aligned_image),
+                                 numpy.asarray(aligned_image))
                     if lossv < min_loss:
                         min_loss = lossv
                 if min_loss < 70:
-                    continue
-                cropped_images.append(alligned_im)
-                image_paths.append(f"{c}.jpg")
-                print("min loss is", min_loss)
-                images.append(im)
-                c += 1
-                print(im.size[0]/im.size[1])
-                # display(im.resize((256,256)))
+                    raise Exception("image is duplicate")
+                aligned_images.append(new_aligned_image)
+
+                pathsAndAges.append((path, age))
+                done += 1
+                print(' in a loop')
             except Exception as e:
                 print(e)
-                c -= 1
+                i += 1
+                if i == 10:
+                    done = 2
+                    print('could not download')
+                print(e, 'failed looping')
                 continue
-    return image_paths
+    return pathsAndAges

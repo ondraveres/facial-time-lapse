@@ -3,6 +3,7 @@ import axios from 'axios';
 import FileUploadItem from "./fileUploadItem";
 import EnterNameItem from "./enterNameItem";
 import Item from "./item";
+import Select from "./selectMenu";
 import AddTodo from "./addTodo";
 
 
@@ -70,42 +71,55 @@ export default class extends React.Component {
 
   render() {
     return (
-      <>
-        <div>
-          <div className="max-w-3xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-            <h1 className="text-7xl my-3 font-bold text-gray-900 text-center">Facial timelapse generator</h1>
-            <h3 className="text-3xl font-medium text-gray-400 text-center">Enter a name or upload your pictures</h3>
-          </div>
-          {/* <h1 className="text-3xl  underline">Facial time lapse video</h1> */}
-          {/* <input type="file" onChange={this.uploadFile} /> */}
 
-          <div className="mx-auto container flex justify-evenly align-middle">
-            <EnterNameItem handleAdd={this.handleAdd} />
-            {/* <div className="flex align-middle justify-center flex-col mx-6"><h1 className="text-3xl font-medium text-gray-900 text-center">or</h1></div> */}
-          </div>
-          <div className="mx-auto container flex justify-evenly flex-wrap">
-            {this.state.items.map((item) => (
-              <Item
-                key={item.id}
-                id={item.id}
-                path={item.path}
-                age={item.age}
-                onDelete={this.handleDelete}
-                handleAgeChange={this.handleAgeChange}
-              />
-            ))}
-            <FileUploadItem handleAdd={this.handleAdd} />
-          </div>
+      <div>
+        <div className="max-w-3xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          <h1 className="text-7xl my-3 font-bold text-gray-900 text-center">Facial timelapse generator</h1>
+          <h3 className="text-3xl font-medium text-gray-400 text-center">Enter a name or upload your pictures</h3>
+        </div>
+        {/* <h1 className="text-3xl  underline">Facial time lapse video</h1> */}
+        {/* <input type="file" onChange={this.uploadFile} /> */}
 
-
-          <div className="max-w-3xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-            <h1 className="text-7xl my-3 font-bold text-gray-900 text-center">Facial timelapse generator</h1>
-            <h3 className="text-3xl font-medium text-gray-400 text-center">Upload several pictures to see the result</h3>
-          </div>
-
+        <div className="mx-auto container flex justify-evenly align-middle">
+          <EnterNameItem handleAdd={this.handleAdd} />
+          {/* <div className="flex align-middle justify-center flex-col mx-6"><h1 className="text-3xl font-medium text-gray-900 text-center">or</h1></div> */}
+        </div>
+        <div className="mx-auto container flex justify-evenly flex-wrap">
+          {this.state.items.map((item) => (
+            <Item
+              key={item.id}
+              id={item.id}
+              path={item.path}
+              age={item.age}
+              onDelete={this.handleDelete}
+              handleAgeChange={this.handleAgeChange}
+            />
+          ))}
+          <FileUploadItem handleAdd={this.handleAdd} />
         </div>
 
-      </>
+
+
+        <div className="mx-auto container flex justify-evenly flex-wrap">
+          <div className=" w-10/12 mx-auto inline-block my-4">
+            <div className="shadow sm:rounded-md sm:overflow-hidden">
+              <div className="px-4 py-4 bg-white space-y-6 sm:p-6">
+
+                {/* <h1 className="text-3xl font-medium text-gray-900 text-center">{this.props.id}</h1> */}
+
+
+
+                <div className="justify-around flex">
+
+                  <Select />
+                </div>
+
+
+              </div>
+            </div>
+          </div >
+        </div>
+      </div>
     );
   }
 }

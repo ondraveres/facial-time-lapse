@@ -16,6 +16,8 @@
     "fresh-dev": "docker-compose up --build"
   },
   "dependencies": {
+    "@headlessui/react": "^1.5.0",
+    "@heroicons/react": "^1.0.6",
     "@material/textfield": "^11.0.0",
     "axios": "^0.26.1",
     "babel-preset-es2015": "^6.24.1",

@@ -16,18 +16,18 @@ def upload_file():
 def file_uploader():
     if request.method == 'POST':
         uploaded_files = request.files.getlist("image")
-        paths = []
+        pathsAndAges = []
         for file in uploaded_files:
             file.save(file.filename)
             try:
-                paths.append(align_image(file.filename))
+                pathsAndAges.append(align_image(file.filename))
             except:
                 print('error')
             os.remove(file.filename)
 
         # pathToGif = createGif(paths)
         # response = make_response(send_file(pathToGif))
-        response = jsonify(paths)
+        response = jsonify(pathsAndAges)
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response
 
@@ -39,21 +39,9 @@ def name_to_gif():
         content = request.get_json()
         name = content['celebrityName']
 
-        not_aligned_paths = saveImagesFromGoogleSearch(name, 10)
-        paths = []
-        for not_aligned_path in not_aligned_paths:
-            try:
-                paths.append(align_image(not_aligned_path))
-            except:
-                print('error')
-            try:
-                os.remove(not_aligned_path)
-            except:
-                print('error')
+        pathsAndAges = saveImagesFromGoogleSearch(name, 10)
 
-        # pathToGif = createGif(not_aligned_paths)
-        # response = make_response(send_file(pathToGif))
-        response = jsonify(paths)
+        response = jsonify(pathsAndAges)
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response
 
