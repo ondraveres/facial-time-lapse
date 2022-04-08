@@ -22,7 +22,8 @@ export default class extends React.Component {
   // }
 
   state = {
-    items: [{ id: 0, path: 'psp_example.png', age: 24 }
+    items: [
+      // { id: 0, path: 'psp_example.png', age: 24 }
     ],
     length: 0
   };

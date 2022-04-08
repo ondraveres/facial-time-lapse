@@ -16,6 +16,10 @@ import urllib
 import random
 import uuid
 
+from io import BytesIO
+
+from request_boost import boosted_requests
+
 import cv2
 import numpy as np
 # import insightface
@@ -37,8 +41,8 @@ print(torch.cuda.current_device(), torch.cuda.get_device_name(0))
 experiment_type = 'restyle_pSp_ffhq'
 frames_between_images = 15
 
-#app = FaceAnalysis(providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
-#app.prepare(ctx_id=0, det_size=(1024, 1024))
+# app = FaceAnalysis(providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
+# app.prepare(ctx_id=0, det_size=(1024, 1024))
 
 
 EXPERIMENT_DATA_ARGS = {
@@ -71,7 +75,6 @@ downloader = Downloader(code_dir='facial-time-lapse-video',
 # @title Load ReStyle SG3 Encoder { display-mode: "form" }
 model_path = EXPERIMENT_ARGS['model_path']
 net, opts = load_encoder(checkpoint_path=model_path)
-pprint.pprint(dataclasses.asdict(opts))
 
 
 n_iters_per_batch = 3  # @param {type:"integer"}
@@ -89,10 +92,10 @@ def align_image(pathToImage):
     alligned_im.save(image_path)
 
     age = round(dex.estimate(image_path)[0])
-    #img = cv2.imread(image_path)
-    #faces = app.get(img)
+    # img = cv2.imread(image_path)
+    # faces = app.get(img)
 
-    #age = faces[0].age
+    # age = faces[0].age
 
     return unique_filename, age
 
@@ -154,7 +157,7 @@ def createGif(paths, ages):
 
                 timelapse_images.append(Image.fromarray(
                     np.array(tensor2im(mixed_image[0])).astype(np.uint8)))
-    pathToGif = f'timelapse{random.randint(0,100000000)}.gif'
+    pathToGif = f'../storage/timelapse{random.randint(0,100000000)}.gif'
     timelapse_images[0].save(fp=pathToGif, format='GIF', append_images=timelapse_images,
                              save_all=True, duration=80, loop=0)
     return pathToGif
@@ -170,56 +173,107 @@ def saveImagesFromGoogleSearch(phrase, number_of_images):
     phrase3 = f'photo of young {phrase}'
     phrase4 = f'photo of {phrase}'
 
-    search_term1 = urllib.parse.quote(phrase1.encode('utf8'))
-    search_term2 = urllib.parse.quote(phrase2.encode('utf8'))
-    search_term3 = urllib.parse.quote(phrase3.encode('utf8'))
-    search_term4 = urllib.parse.quote(phrase4.encode('utf8'))
+    phrases = [phrase1, phrase2, phrase3, phrase4]
+    urls = []
+    for phrase in phrases:
+        search_term = urllib.parse.quote(phrase.encode('utf8'))
+        url = f'https://customsearch.googleapis.com/customsearch/v1?cr=asd&cx=b0aeb7e24cc9a435d&q={search_term}&imgType=face&imgSize=MEDIUM&num={number_of_images}&safe=active&searchType=image&filter=1&key=AIzaSyAxeJGJ-oVB1S5QppevK64MvKWgn7Y-oDU&start=1'
+        urls.append(url)
 
-    url_first_page = f'https://customsearch.googleapis.com/customsearch/v1?cr=asd&cx=b0aeb7e24cc9a435d&q={search_term1}&imgType=face&imgSize=MEDIUM&num={number_of_images}&safe=active&searchType=image&filter=1&key=AIzaSyAxeJGJ-oVB1S5QppevK64MvKWgn7Y-oDU&start=1'
-    url_second_page = f'https://customsearch.googleapis.com/customsearch/v1?cr=asd&cx=b0aeb7e24cc9a435d&q={search_term2}&imgType=face&imgSize=MEDIUM&num={number_of_images}&safe=active&searchType=image&filter=1&key=AIzaSyAxeJGJ-oVB1S5QppevK64MvKWgn7Y-oDU&start=1'
-    url_third_page = f'https://customsearch.googleapis.com/customsearch/v1?cr=asd&cx=b0aeb7e24cc9a435d&q={search_term3}&imgType=face&imgSize=MEDIUM&num={number_of_images}&safe=active&searchType=image&filter=1&key=AIzaSyAxeJGJ-oVB1S5QppevK64MvKWgn7Y-oDU&start=1'
-    url_fourth_page = f'https://customsearch.googleapis.com/customsearch/v1?cr=asd&cx=b0aeb7e24cc9a435d&q={search_term4}&imgType=face&imgSize=MEDIUM&num={number_of_images}&safe=active&searchType=image&filter=1&key=AIzaSyAxeJGJ-oVB1S5QppevK64MvKWgn7Y-oDU&start=1'
-    first_page = requests.get(url_first_page)
-    second_page = requests.get(url_second_page)
-    third_page = requests.get(url_third_page)
-    fourth_page = requests.get(url_fourth_page)
+    results = boosted_requests(urls=urls)
+
+    # first_page = requests.get(url_first_page)
+    # second_page = requests.get(url_second_page)
+    # third_page = requests.get(url_third_page)
+    # fourth_page = requests.get(url_fourth_page)
 
     pathsAndAges = []
     aligned_images = []
 
-    for page in [first_page, second_page, third_page, fourth_page]:
-        done = 0
-        i = 0
-        while done < 1:
-            try:
-                print('printing')
-                print(page.json()["items"][i]["link"])
-                im = Image.open(requests.get(page.json()["items"][i]["link"], headers={
-                    'User-Agent': 'Facial time lapse bot/0.0 ondra.veres@gmail.com'}, stream=True).raw)
-                im.convert('RGB').save("temp.jpg", 'jpeg')
-                path, age = align_image("temp.jpg")
-                new_aligned_image = Image.open('../storage/'+path)
-                min_loss = 10000000000000000000000000
-                for aligned_image in aligned_images:
-                    lossv = loss(numpy.asarray(new_aligned_image),
-                                 numpy.asarray(aligned_image))
-                    if lossv < min_loss:
-                        min_loss = lossv
-                if min_loss < 70:
-                    raise Exception("image is duplicate")
+    image_urls = []
+    headers = []
+    for i in range(number_of_images):
+        for page in results:
+            image_urls.append(page["items"][i]["link"])
+            headers.append(
+                {'User-Agent': 'Facial time lapse bot/0.0 ondra.veres@gmail.com'})
+    print(image_urls)
+    image_results = boosted_requests(
+        urls=image_urls,  timeout=1, headers=headers, parse_json=False)
 
-                aligned_images.append(new_aligned_image)
+    for response in image_results:
+        try:
+            im = Image.open(BytesIO(response))
+            im.convert('RGB').save("temp.jpg", 'jpeg')
+            path, age = align_image("temp.jpg")
+            left = 412
+            top = 412
+            right = 612
+            bottom = 612
+            new_aligned_image = Image.open(
+                '../storage/'+path).crop((left, top, right, bottom))
+            min_loss = 10000000000000000000000000
+            for aligned_image in aligned_images:
+                lossv = loss(numpy.asarray(new_aligned_image),
+                             numpy.asarray(aligned_image))
+                if lossv < min_loss:
+                    min_loss = lossv
+            if min_loss < 85:
+                raise Exception("image is duplicate")
 
-                pathsAndAges.append((path, age))
-                done += 1
-                print(' in a loop')
-            except Exception as e:
-                print(e)
-                i += 1
-                if i == 10:
-                    done = 2
-                    print('could not download')
-                print(e, 'failed looping')
-                print(traceback.format_exc())
-                continue
+            aligned_images.append(new_aligned_image)
+
+            pathsAndAges.append((path, age))
+            done += 1
+        except Exception as e:
+            print(e)
+            i += 1
+            if i == number_of_images:
+                done = 2
+            continue
+
+    # for page in results:
+    #     done = 0
+    #     i = 0
+    #     while done < 1:
+    #         try:
+    #             print(page["items"][i]["link"])
+    #             # headers = {
+    #             #     'User-Agent': 'Facial time lapse bot/0.0 ondra.veres@gmail.com',
+    #             #     'Transfer-Encoding': 'chunked'
+    #             # }
+    #             url = page["items"][i]["link"]
+    #             response = requests.get(url)
+
+    #             im = Image.open(BytesIO(response.content))
+    #             # im = Image.open(requests.get(
+    #             #     url, headers=headers, timeout=1).raw)
+    #             im.convert('RGB').save("temp.jpg", 'jpeg')
+    #             path, age = align_image("temp.jpg")
+    #             left = 384
+    #             top = 384
+    #             right = 384*2
+    #             bottom = 384*2
+    #             new_aligned_image = Image.open(
+    #                 '../storage/'+path).crop((left, top, right, bottom))
+    #             min_loss = 10000000000000000000000000
+    #             for aligned_image in aligned_images:
+    #                 lossv = loss(numpy.asarray(new_aligned_image),
+    #                              numpy.asarray(aligned_image))
+    #                 if lossv < min_loss:
+    #                     min_loss = lossv
+    #             if min_loss < 1:
+    #                 raise Exception("image is duplicate")
+
+    #             aligned_images.append(new_aligned_image)
+
+    #             pathsAndAges.append((path, age))
+    #             done += 1
+    #         except Exception as e:
+    #             print(e)
+    #             i += 1
+    #             if i == number_of_images:
+    #                 done = 2
+    #             continue
     return pathsAndAges
+    # return [('hi', 22)]

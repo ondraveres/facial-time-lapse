@@ -33,7 +33,6 @@ def file_uploader():
 @app.route('/generateGifAPI', methods=['GET', 'POST'])
 def gif_gen():
     if request.method == 'POST':
-        print(request.is_json)
         content = request.get_json()
         paths = []
         ages = []
@@ -44,33 +43,21 @@ def gif_gen():
         pathToGif = createGif(paths, ages)
         response = make_response(send_file(pathToGif))
         response.headers.add('Access-Control-Allow-Origin', '*')
+        os.remove(pathToGif)
         return response
 
 
 @ app.route('/uploadNameAPI', methods=['GET', 'POST'])
 def name_to_gif():
     if request.method == 'POST':
-        print(request.is_json)
         content = request.get_json()
         name = content['celebrityName']
 
-        pathsAndAges = saveImagesFromGoogleSearch(name, 10)
+        pathsAndAges = saveImagesFromGoogleSearch(name, 3)
 
         response = jsonify(pathsAndAges)
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response
-
-
-@ app.route('/deleteImagesAPI', methods=['GET', 'POST'])
-def delete_images():
-
-    print(request.is_json)
-    content = request.get_json()
-    print(content)
-
-    response = jsonify('hi')
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response
 
 
 if __name__ == '__main__':

@@ -59,7 +59,6 @@ def estimate_gender(img):
 
 
 def estimate(img):
-    print('heree')
     """return values as (age, female, male)"""
     img = cv2.imread(img)
     result = [estimate_age(img)]

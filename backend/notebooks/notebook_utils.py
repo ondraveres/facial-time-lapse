@@ -70,7 +70,6 @@ def download_dlib_models():
 
 
 def run_alignment(image_path):
-    print('AAAAAAAAAA', dlib.DLIB_USE_CUDA)
     download_dlib_models()
     predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
     detector = dlib.get_frontal_face_detector()

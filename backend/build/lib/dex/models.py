@@ -6,14 +6,17 @@ from collections import OrderedDict
 
 def vgg_block(in_channels, out_channels, more=False):
     blocklist = [
-        ('conv1', nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1)),
+        ('conv1', nn.Conv2d(in_channels, out_channels,
+         kernel_size=3, stride=1, padding=1)),
         ('relu1', nn.ReLU(inplace=True)),
-        ('conv2', nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1)),
+        ('conv2', nn.Conv2d(out_channels, out_channels,
+         kernel_size=3, stride=1, padding=1)),
         ('relu2', nn.ReLU(inplace=True)),
     ]
     if more:
         blocklist.extend([
-            ('conv3', nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1)),
+            ('conv3', nn.Conv2d(out_channels, out_channels,
+             kernel_size=3, stride=1, padding=1)),
             ('relu3', nn.ReLU(inplace=True)),
         ])
     blocklist.append(('maxpool', nn.MaxPool2d(kernel_size=2, stride=2)))
@@ -21,6 +24,8 @@ def vgg_block(in_channels, out_channels, more=False):
     return block
 
 # VGG16 architecture
+
+
 class VGG(nn.Module):
     def __init__(self, classes=1000, channels=3):
         super().__init__()
@@ -53,10 +58,12 @@ class VGG(nn.Module):
         x = F.softmax(x, dim=1)
         return x
 
+
 class Gender(VGG):
     def __init__(self, classes=2, channels=3):
         super().__init__()
         self.cls = nn.Linear(4096, classes)
+
 
 class Age(VGG):
     def __init__(self, classes=101, channels=3):
@@ -64,8 +71,5 @@ class Age(VGG):
         self.cls = nn.Linear(4096, classes)
 
 
-
 if __name__ == '__main__':
     net = Gender()
-    print(net)
-
