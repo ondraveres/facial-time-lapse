@@ -1,1 +1,6 @@
 *.pt
+*.pth
+storage
+__pycache__
+.vscode
+*egg-info

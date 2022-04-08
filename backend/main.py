@@ -99,7 +99,7 @@ def align_image(pathToImage):
 
 def invertImage(pathToImage):
     cropped_images = []
-    alligned_im = run_alignment(pathToImage)
+    alligned_im = Image.open(pathToImage)
     cropped_images.append(alligned_im)
 
     transformed_images = []
@@ -134,7 +134,7 @@ def invertImage(pathToImage):
     return result_latent
 
 
-def createGif(paths):
+def createGif(paths, ages):
     result_latents = []
     for path in paths:
         result_latents.append(invertImage(path))
@@ -175,7 +175,7 @@ def saveImagesFromGoogleSearch(phrase, number_of_images):
     search_term3 = urllib.parse.quote(phrase3.encode('utf8'))
     search_term4 = urllib.parse.quote(phrase4.encode('utf8'))
 
-    url_first_page = f'https://customsearch.googleapis.com/customsearch/v1?cr=asd&cx=b0aeb7e24cc9a435d&q={search_term1}&imgType=face&num={number_of_images}&safe=active&searchType=image&filter=1&key=AIzaSyAxeJGJ-oVB1S5QppevK64MvKWgn7Y-oDU&start=1'
+    url_first_page = f'https://customsearch.googleapis.com/customsearch/v1?cr=asd&cx=b0aeb7e24cc9a435d&q={search_term1}&imgType=face&imgSize=MEDIUM&num={number_of_images}&safe=active&searchType=image&filter=1&key=AIzaSyAxeJGJ-oVB1S5QppevK64MvKWgn7Y-oDU&start=1'
     url_second_page = f'https://customsearch.googleapis.com/customsearch/v1?cr=asd&cx=b0aeb7e24cc9a435d&q={search_term2}&imgType=face&imgSize=MEDIUM&num={number_of_images}&safe=active&searchType=image&filter=1&key=AIzaSyAxeJGJ-oVB1S5QppevK64MvKWgn7Y-oDU&start=1'
     url_third_page = f'https://customsearch.googleapis.com/customsearch/v1?cr=asd&cx=b0aeb7e24cc9a435d&q={search_term3}&imgType=face&imgSize=MEDIUM&num={number_of_images}&safe=active&searchType=image&filter=1&key=AIzaSyAxeJGJ-oVB1S5QppevK64MvKWgn7Y-oDU&start=1'
     url_fourth_page = f'https://customsearch.googleapis.com/customsearch/v1?cr=asd&cx=b0aeb7e24cc9a435d&q={search_term4}&imgType=face&imgSize=MEDIUM&num={number_of_images}&safe=active&searchType=image&filter=1&key=AIzaSyAxeJGJ-oVB1S5QppevK64MvKWgn7Y-oDU&start=1'
@@ -190,7 +190,7 @@ def saveImagesFromGoogleSearch(phrase, number_of_images):
     for page in [first_page, second_page, third_page, fourth_page]:
         done = 0
         i = 0
-        while done < 2:
+        while done < 1:
             try:
                 print('printing')
                 print(page.json()["items"][i]["link"])

@@ -119,7 +119,7 @@ export default class FileUploadItem extends Component {
   render() {
     return (
       <>
-        <div className=" w-96 mx-auto inline-block my-4">
+        <div className=" w-96 mx-auto inline-block">
           <div className="md:mt-0 md:col-span-2">
             <form action="#" method="POST">
               <div className="shadow sm:rounded-md sm:overflow-hidden">
@@ -127,7 +127,7 @@ export default class FileUploadItem extends Component {
                   {/* <h3 className="font-medium leading-tight text-3xl mt-0 mb-2 text-blue-600">First image</h3> */}
 
 
-                  {/* <h1 className="text-3xl font-medium text-gray-900 text-center">Upload images</h1> */}
+                  <h1 className="text-3xl font-medium text-gray-900 text-center">Upload images</h1>
 
 
                   {/* add flex */}
