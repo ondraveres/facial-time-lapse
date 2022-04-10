@@ -1,6 +1,9 @@
 import React, { Component } from "react";
 import axios from 'axios';
 
+var ReactDOM = require('react-dom');
+var GifPlayer = require('react-gif-player');
+
 export default class Result extends Component {
 
 
@@ -15,9 +18,11 @@ export default class Result extends Component {
 
   };
   tryToGetURL = () => {
-    if (this.state.img) {
-      return URL.createObjectURL(this.state.img)
+
+    if (this.props.image) {
+      return URL.createObjectURL(this.props.image)
     }
+
     else
       return null
   }
@@ -26,9 +31,10 @@ export default class Result extends Component {
     e.preventDefault();
     this.setState({ status: 'waiting' })
     const data = this.props.items
-    axios.post(`http://halmos.felk.cvut.cz:5000/generateGifAPI`, data, { responseType: 'blob' }).then(res => {
+    axios.post(this.props.url, data, { responseType: 'blob' }).then(res => {
       // then print response status
       console.log(res)
+      this.props.updateImages(res.data, this.props.v)
       this.setState({ img: res.data })
       this.setState({ status: 'done' })
     }).catch((error) => {
@@ -64,14 +70,14 @@ export default class Result extends Component {
       <>
 
 
-        <div className=" w-96 mx-auto inline-block">
+        <div className="w-96 mx-auto inline-block">
           <div className="md:mt-0 md:col-span-2">
             <div className="shadow sm:rounded-md sm:overflow-hidden">
               <div className="px-4 py-4 bg-white space-y-6 sm:p-6">
                 {/* <h3 className="font-medium leading-tight text-3xl mt-0 mb-2 text-blue-600">First image</h3> */}
 
 
-                <h1 className="text-3xl font-medium text-gray-900 text-center">Result</h1>
+                <h1 className="text-3xl font-medium text-gray-900 text-center">{this.props.title}</h1>
 
 
                 <div className={this.state.status === 'init' ? "my-0" : "hidden"}>
@@ -96,7 +102,10 @@ export default class Result extends Component {
                   </div>
                 </div>
                 <div className={this.state.status === 'done' ? "" : "hidden"} >
+
+                  {/* <GifPlayer gif={this.tryToGetURL()} /> */}
                   <img src={this.tryToGetURL()} />
+
                   <form onSubmit={this.handleSubmit} className="col-span-6 sm:col-span-3">
                     <div className="py-3 text-left flex justify-center">
                       <button
@@ -111,6 +120,16 @@ export default class Result extends Component {
                 <div className={this.state.status === 'failed' ? "" : "hidden"} >
                   <p>Error status: {this.state.errorStatus}<br />
                     Error data: {this.state.errorData} </p>
+                  <form onSubmit={this.handleSubmit} className="col-span-6 sm:col-span-3">
+                    <div className="py-3 text-left flex justify-center">
+                      <button
+                        type="submit"
+                        className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 justify-center"
+                      >
+                        Try again
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
             </div>

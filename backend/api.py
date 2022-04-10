@@ -30,8 +30,8 @@ def file_uploader():
         return response
 
 
-@app.route('/generateGifAPI', methods=['GET', 'POST'])
-def gif_gen():
+@app.route('/generateGif2API', methods=['GET', 'POST'])
+def gif_gen2():
     if request.method == 'POST':
         content = request.get_json()
         paths = []
@@ -40,7 +40,24 @@ def gif_gen():
             paths.append('../storage/'+item['path'])
             ages.append(item['age'])
 
-        pathToGif = createGif(paths, ages)
+        pathToGif = createGif(paths, ages, 2)
+        response = make_response(send_file(pathToGif))
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        os.remove(pathToGif)
+        return response
+
+
+@app.route('/generateGif3API', methods=['GET', 'POST'])
+def gif_gen3():
+    if request.method == 'POST':
+        content = request.get_json()
+        paths = []
+        ages = []
+        for item in content:
+            paths.append('../storage/'+item['path'])
+            ages.append(item['age'])
+
+        pathToGif = createGif(paths, ages, 3)
         response = make_response(send_file(pathToGif))
         response.headers.add('Access-Control-Allow-Origin', '*')
         os.remove(pathToGif)

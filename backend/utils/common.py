@@ -42,7 +42,7 @@ def tensor2im(var: torch.tensor):
     var[var < 0] = 0
     var[var > 1] = 1
     var = var * 255
-    return Image.fromarray(var.astype('uint8'))
+    return Image.fromarray(var.astype('uint8')).resize((512, 512))
 
 
 # def generate_mp4(out_name, images: List[np.ndarray], kwargs):

@@ -22,9 +22,9 @@ from request_boost import boosted_requests
 
 import cv2
 import numpy as np
-# import insightface
-from insightface.app import FaceAnalysis
-from insightface.data import get_image as ins_get_image
+# # import insightface
+# from insightface.app import FaceAnalysis
+# from insightface.data import get_image as ins_get_image
 
 from editing.interfacegan.face_editor import FaceEditor
 from models.stylegan3.model import GeneratorType
@@ -38,7 +38,7 @@ dex.eval()
 
 print(torch.cuda.current_device(), torch.cuda.get_device_name(0))
 
-experiment_type = 'restyle_pSp_ffhq'
+experiment_type = 'pSp_stylegan2'
 frames_between_images = 15
 
 # app = FaceAnalysis(providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
@@ -61,25 +61,39 @@ EXPERIMENT_DATA_ARGS = {
             transforms.Resize((256, 256)),
             transforms.ToTensor(),
             transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
-    }
+    },
+    "pSp_stylegan2": {
+        "model_path": "pixel2style2pixel/pretrained_models/psp_ffhq_encode.pt",
+        "transform": transforms.Compose([
+            transforms.Resize((256, 256)),
+            transforms.ToTensor(),
+            transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
+    },
+    "toonify": {
+        "model_path": "pixel2style2pixel/pretrained_models/psp_ffhq_toonify.pt",
+        "transform": transforms.Compose([
+            transforms.Resize((256, 256)),
+            transforms.ToTensor(),
+            transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
+    },
 }
 
 EXPERIMENT_ARGS = EXPERIMENT_DATA_ARGS[experiment_type]
 
-download_with_pydrive = False  # @param {type:"boolean"}
-downloader = Downloader(code_dir='facial-time-lapse-video',
-                        use_pydrive=download_with_pydrive,
-                        subdir="pretrained_models")
 
+tic = time.time()
+model_path3 = "./pretrained_models/restyle_pSp_ffhq.pt"
+net3, opts3 = load_encoder(checkpoint_path=model_path3)
 
-# @title Load ReStyle SG3 Encoder { display-mode: "form" }
-model_path = EXPERIMENT_ARGS['model_path']
-net, opts = load_encoder(checkpoint_path=model_path)
+model_path2 = "pixel2style2pixel/pretrained_models/psp_ffhq_encode.pt"
+net2, opts2 = load_encoder(checkpoint_path=model_path2)
+toc = time.time()
 
+print('Loading two models took {:.4f} seconds.'.format(toc - tic))
 
 n_iters_per_batch = 3  # @param {type:"integer"}
-opts.n_iters_per_batch = n_iters_per_batch
-opts.resize_outputs = False  # generate outputs at full resolution
+opts3.n_iters_per_batch = n_iters_per_batch
+opts3.resize_outputs = False  # generate outputs at full resolution
 
 img_transforms = EXPERIMENT_ARGS['transform']
 
@@ -100,63 +114,79 @@ def align_image(pathToImage):
     return unique_filename, age
 
 
-def invertImage(pathToImage):
-    cropped_images = []
+def invertImage(pathToImage, version):
     alligned_im = Image.open(pathToImage)
-    cropped_images.append(alligned_im)
+    transformed_image = img_transforms(alligned_im)
 
-    transformed_images = []
-    for cropped_image in cropped_images:
-        transformed_images.append(img_transforms(cropped_image))
-        # transformed_images.append(img_transforms(cropped_image))
-        # transformed_images.append(img_transforms(cropped_image))
-        # transformed_images.append(img_transforms(cropped_image))
+    if version == 3:
+        tensor_with_images = torch.stack([transformed_image], dim=0)
+        avg_image = get_average_image(net3)
 
-    tensor_with_images = torch.stack(transformed_images, dim=0)
-    avg_image = get_average_image(net)
+        with torch.no_grad():
+            tic = time.time()
+            avg_image_for_batch = avg_image.unsqueeze(
+                0).repeat(transformed_image.unsqueeze(
+                    0).shape[0], 1, 1, 1)
+            x_input = torch.cat(
+                [transformed_image.unsqueeze(0).cuda(), avg_image_for_batch], dim=1)
 
-    with torch.no_grad():
-        tic = time.time()
+            # _, latent = net3(x_input, return_latents=True, resize=True)
 
-        result_batch, result_latents = run_on_batch(inputs=tensor_with_images.cuda().float(),
-                                                    net=net,
-                                                    opts=opts,
-                                                    avg_image=avg_image)
-        # landmarks_transform=torch.from_numpy(landmarks_transform).cuda().float())
+            _, result_latents = run_on_batch(inputs=transformed_image.unsqueeze(0).to(
+                "cuda").float(),
+                net=net3,
+                opts=opts3,
+                avg_image=avg_image)
 
-        toc = time.time()
-        print('Inference took {:.4f} seconds.'.format(toc - tic))
-    result_latent = result_latents[0][2]
-    # result_tensors = result_batch[0]  # there's one image in our batch
-    # resize_amount = (256, 256) if opts.resize_outputs else (
-    #    opts.output_size, opts.output_size)
-    # final_rec = tensor2im(result_tensors[-1]).resize(resize_amount)
+            toc = time.time()
+            print('Inference v3 took {:.4f} seconds.'.format(toc - tic))
+        # return latent[0]
+        return torch.from_numpy(result_latents[0][2])
+    if version == 2:
+        with torch.no_grad():
+            tic = time.time()
 
-    # res = Image.fromarray(np.array(final_rec))
-    # os.remove(pathToImage)
-    return result_latent
+            _, latent = net2(transformed_image.unsqueeze(0).to(
+                "cuda").float(), return_latents=True, resize=True)
+            toc = time.time()
+            print('Inference v2 took {:.4f} seconds.'.format(toc - tic))
+        return latent
 
 
-def createGif(paths, ages):
+def createGif(paths, ages, version):
     result_latents = []
     for path in paths:
-        result_latents.append(invertImage(path))
+        latent = invertImage(path, version)
+        if version == 2:
+            tensor_latent = latent.cuda()
+        if version == 3:
+            tensor_latent = latent.cuda()
+        result_latents.append(tensor_latent)
     timelapse_images = []
+
     with torch.no_grad():
+
+        tic = time.time()
         for i in range(len(result_latents)-1):
-            print('i is', i)
             for j in range(frames_between_images):
                 t2 = j/(frames_between_images-1)
+                print(t2)
                 t1 = 1 - t2
-                avg = result_latents[i] * t1 + result_latents[i+1]*t2
-                mixed_image = net(torch.from_numpy(avg).cuda().unsqueeze(
-                    0), return_latents=False, input_code=True, resize=False)
-                # tensor = torch.from_numpy(avg).unsqueeze(0)
-                # mixed_image, result_latent = net(torch.cat((tensor, tensor, tensor), 0).cuda(
-                # ), return_latents=True, input_code=True, resize=False)
+                avg = torch.add(torch.mul(result_latents[i], t1), torch.mul(
+                    result_latents[i+1], t2))
+                mixed_image = None
+                if version == 2:
+                    mixed_image, _ = net2(
+                        avg, return_latents=True, input_code=True, resize=False)
+                else:
+                    mixed_image, _ = net3(avg.unsqueeze(
+                        0), return_latents=True, input_code=True, resize=False)
 
-                timelapse_images.append(Image.fromarray(
-                    np.array(tensor2im(mixed_image[0])).astype(np.uint8)))
+                timelapse_images.append(
+                    tensor2im(mixed_image[0]))
+    toc = time.time()
+    print(
+        'Generating images took {:.4f} seconds.'.format(toc - tic))
     pathToGif = f'../storage/timelapse{random.randint(0,100000000)}.gif'
     timelapse_images[0].save(fp=pathToGif, format='GIF', append_images=timelapse_images,
                              save_all=True, duration=80, loop=0)

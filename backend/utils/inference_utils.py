@@ -8,10 +8,12 @@ from torchvision import transforms
 from configs.paths_config import model_paths
 from inversion.models.e4e3 import e4e
 from inversion.models.psp3 import pSp
+from pixel2style2pixel.models.psp import pSp as pSp2
 from inversion.options.e4e_train_options import e4eTrainOptions
 from inversion.options.test_options import TestOptions
 from inversion.options.train_options import TrainOptions
 from models.stylegan3.model import SG3Generator
+from argparse import Namespace
 from utils.model_utils import ENCODER_TYPES
 
 IMAGE_TRANSFORMS = transforms.Compose([
@@ -26,6 +28,25 @@ FULL_IMAGE_TRANSFORMS = transforms.Compose([
 
 
 def load_encoder(checkpoint_path: Path, test_opts: Optional[TestOptions] = None, generator_path: Optional[Path] = None):
+    if checkpoint_path == 'pixel2style2pixel/pretrained_models/psp_ffhq_encode.pt' or checkpoint_path == 'pixel2style2pixel/pretrained_models/psp_ffhq_toonify.pt':
+        ckpt = torch.load(checkpoint_path, map_location='cpu')
+
+        opts = ckpt['opts']
+
+        # update the training options
+        opts['checkpoint_path'] = checkpoint_path
+        if 'learn_in_w' not in opts:
+            opts['learn_in_w'] = False
+        if 'output_size' not in opts:
+            opts['output_size'] = 1024
+
+        opts = Namespace(**opts)
+        net = pSp2(opts)
+        net.eval()
+        net.cuda()
+
+        return net, opts
+
     ckpt = torch.load(checkpoint_path, map_location='cpu')
     opts = ckpt['opts']
     opts["checkpoint_path"] = checkpoint_path
@@ -33,7 +54,8 @@ def load_encoder(checkpoint_path: Path, test_opts: Optional[TestOptions] = None,
     if opts['stylegan_weights'] == Path(model_paths["stylegan3_ffhq"]):
         opts['stylegan_weights'] = Path(model_paths["stylegan3_ffhq_pt"])
     if opts['stylegan_weights'] == Path(model_paths["stylegan3_ffhq_unaligned"]):
-        opts['stylegan_weights'] = Path(model_paths["stylegan3_ffhq_unaligned_pt"])
+        opts['stylegan_weights'] = Path(
+            model_paths["stylegan3_ffhq_unaligned_pt"])
 
     if opts["encoder_type"] in ENCODER_TYPES['pSp']:
         opts = TrainOptions(**opts)
@@ -74,7 +96,8 @@ def run_on_batch(inputs: torch.tensor, net, opts: TrainOptions, avg_image: torch
 
     for iter in range(opts.n_iters_per_batch):
         if iter == 0:
-            avg_image_for_batch = avg_image.unsqueeze(0).repeat(inputs.shape[0], 1, 1, 1)
+            avg_image_for_batch = avg_image.unsqueeze(
+                0).repeat(inputs.shape[0], 1, 1, 1)
             x_input = torch.cat([inputs, avg_image_for_batch], dim=1)
         else:
             x_input = torch.cat([inputs, y_hat], dim=1)

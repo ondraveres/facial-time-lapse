@@ -25,7 +25,9 @@ export default class extends React.Component {
     items: [
       // { id: 0, path: 'psp_example.png', age: 24 }
     ],
-    length: 0
+    length: 0,
+    image2: undefined,
+    image3: undefined
   };
   handleDelete = (todoId) => {
     const items = this.state.items.filter((todo) => todo.id !== todoId);
@@ -70,6 +72,16 @@ export default class extends React.Component {
     this.setState({ items: orderedItems });
   };
 
+  updateImages = (newImage, v) => {
+    if (v == 2) {
+      this.setState({ image2: newImage })
+    }
+    if (v == 3) {
+      this.setState({ image3: newImage })
+    }
+
+  }
+
   render() {
     return (
 
@@ -102,7 +114,8 @@ export default class extends React.Component {
 
         <div className=" h-10"></div >
         <div className="mx-auto container flex justify-evenly flex-wrap">
-          <Result items={this.state.items} />
+          <Result items={this.state.items} image={this.state.image2} v={2} updateImages={this.updateImages} title='StyleGAN2 results' url='http://halmos.felk.cvut.cz:5000/generateGif2API' />
+          <Result items={this.state.items} image={this.state.image3} v={3} updateImages={this.updateImages} title='StyleGAN3 results' url='http://halmos.felk.cvut.cz:5000/generateGif3API' />
         </div>
 
         <div className=" h-10"></div >
