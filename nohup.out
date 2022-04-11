@@ -1,0 +1,50 @@
+npm ERR! code ENOENT
+npm ERR! syscall open
+npm ERR! path /mnt/home.stud/veresond/facial-time-lapse-video/package.json
+npm ERR! errno -2
+npm ERR! enoent ENOENT: no such file or directory, open '/mnt/home.stud/veresond/facial-time-lapse-video/package.json'
+npm ERR! enoent This is related to npm not being able to find a file.
+npm ERR! enoent 
+
+npm ERR! A complete log of this run can be found in:
+npm ERR!     /home.stud/veresond/.npm/_logs/2022-04-11T12_20_57_936Z-debug-0.log
+npm ERR! code ENOENT
+npm ERR! syscall open
+npm ERR! path /mnt/home.stud/veresond/facial-time-lapse-video/package.json
+npm ERR! errno -2
+npm ERR! enoent ENOENT: no such file or directory, open '/mnt/home.stud/veresond/facial-time-lapse-video/package.json'
+npm ERR! enoent This is related to npm not being able to find a file.
+npm ERR! enoent 
+
+npm ERR! A complete log of this run can be found in:
+npm ERR!     /home.stud/veresond/.npm/_logs/2022-04-11T12_21_04_643Z-debug-0.log
+npm ERR! code ENOENT
+npm ERR! syscall open
+npm ERR! path /mnt/home.stud/veresond/facial-time-lapse-video/package.json
+npm ERR! errno -2
+npm ERR! enoent ENOENT: no such file or directory, open '/mnt/home.stud/veresond/facial-time-lapse-video/package.json'
+npm ERR! enoent This is related to npm not being able to find a file.
+npm ERR! enoent 
+
+npm ERR! A complete log of this run can be found in:
+npm ERR!     /home.stud/veresond/.npm/_logs/2022-04-11T12_21_07_206Z-debug-0.log
+npm ERR! code ENOENT
+npm ERR! syscall open
+npm ERR! path /mnt/home.stud/veresond/facial-time-lapse-video/package.json
+npm ERR! errno -2
+npm ERR! enoent ENOENT: no such file or directory, open '/mnt/home.stud/veresond/facial-time-lapse-video/package.json'
+npm ERR! enoent This is related to npm not being able to find a file.
+npm ERR! enoent 
+
+npm ERR! A complete log of this run can be found in:
+npm ERR!     /home.stud/veresond/.npm/_logs/2022-04-11T12_21_10_384Z-debug-0.log
+npm ERR! code ENOENT
+npm ERR! syscall open
+npm ERR! path /mnt/home.stud/veresond/facial-time-lapse-video/package.json
+npm ERR! errno -2
+npm ERR! enoent ENOENT: no such file or directory, open '/mnt/home.stud/veresond/facial-time-lapse-video/package.json'
+npm ERR! enoent This is related to npm not being able to find a file.
+npm ERR! enoent 
+
+npm ERR! A complete log of this run can be found in:
+npm ERR!     /home.stud/veresond/.npm/_logs/2022-04-11T12_21_14_107Z-debug-0.log

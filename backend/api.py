@@ -1,5 +1,7 @@
+from flask import send_from_directory
+import time
 from io import BytesIO
-from main import align_image, invertImage, createGif, saveImagesFromGoogleSearch
+from main import align_image, invertImage, createGif, saveImagesFromGoogleSearch, removeOthers
 from flask import Flask, render_template, request, send_file, make_response, jsonify
 from flask_cors import CORS
 import os
@@ -19,12 +21,11 @@ def file_uploader():
         pathsAndAges = []
         for file in uploaded_files:
             file.save(file.filename)
-            try:
-                pathsAndAges.append(align_image(file.filename))
-            except:
-                print('error')
-            os.remove(file.filename)
-
+            # try:
+            pathsAndAges.append(
+                ('http://halmos.felk.cvut.cz:5000/storage/'+align_image(file.filename)[0], align_image(file.filename)[1]))
+            # except:
+            #     print('error')
         response = jsonify(pathsAndAges)
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response
@@ -71,10 +72,20 @@ def name_to_gif():
         name = content['celebrityName']
 
         pathsAndAges = saveImagesFromGoogleSearch(name, 3)
+        # tic = time.time()
 
+        # pathsAndAges = removeOthers(pathsAndAges)
+        # toc = time.time()
+
+        #print('removeOthers took {:.4f} seconds.'.format(toc - tic))
         response = jsonify(pathsAndAges)
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response
+
+
+@app.route('/storage/<path:path>')
+def send_report(path):
+    return send_from_directory('../storage', path)
 
 
 if __name__ == '__main__':

@@ -20,8 +20,6 @@ from io import BytesIO
 
 from request_boost import boosted_requests
 
-import cv2
-import numpy as np
 # # import insightface
 # from insightface.app import FaceAnalysis
 # from insightface.data import get_image as ins_get_image
@@ -33,6 +31,8 @@ from notebooks.notebook_utils import run_alignment, crop_image, compute_transfor
 from utils.common import tensor2im
 from utils.inference_utils import run_on_batch, load_encoder, get_average_image
 import dex
+
+from lib import VGGFace
 
 dex.eval()
 
@@ -96,6 +96,37 @@ opts3.n_iters_per_batch = n_iters_per_batch
 opts3.resize_outputs = False  # generate outputs at full resolution
 
 img_transforms = EXPERIMENT_ARGS['transform']
+
+model = VGGFace().double()
+
+model_dict = torch.load('models/vggface.pth',
+                        map_location=lambda storage, loc: storage)
+model.load_state_dict(model_dict)
+# Set model to evaluation mode
+model.eval()
+
+
+def removeOthers(pathsAndAges):
+    descriptorsList = []
+    for pathAndAge in pathsAndAges:
+        img = cv2.imread('../storage/'+pathAndAge[0])
+        img = cv2.resize(img, (224, 224))
+        # Forward test image through VGGFace
+        img = torch.Tensor(img).permute(
+            2, 0, 1).view(1, 3, 224, 224).double()
+        img -= torch.Tensor(np.array([129.1863, 104.7624,
+                            93.5940])).double().view(1, 3, 1, 1)
+        descriptor = model(img)[0].detach().numpy()
+        descriptorsList.append(descriptor)
+        print(descriptor.shape)
+    descriptorsArray = numpy.stack(descriptorsList, axis=0)
+    descriptor_median = np.median(descriptorsArray, axis=0)
+    pathsAndDistances = []
+    for i in range(len(descriptorsList)):
+        dist = ((descriptorsList[i]-descriptor_median)**2).mean()
+        pathsAndDistances.append((pathsAndAges[i][0], dist))
+
+    return pathsAndDistances
 
 
 def align_image(pathToImage):
@@ -253,7 +284,8 @@ def saveImagesFromGoogleSearch(phrase, number_of_images):
 
             aligned_images.append(new_aligned_image)
 
-            pathsAndAges.append((path, age))
+            pathsAndAges.append(
+                ('http://halmos.felk.cvut.cz:5000/storage/'+path, age))
             done += 1
         except Exception as e:
             print(e)
