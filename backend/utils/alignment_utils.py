@@ -14,16 +14,17 @@ def get_landmark(filepath, detector, predictor):
     """
     img = dlib.load_rgb_image(filepath)
     dets = detector(img, 1)
-
+    lms= []
     for k, d in enumerate(dets):
         shape = predictor(img, d)
 
-    t = list(shape.parts())
-    a = []
-    for tt in t:
-        a.append([tt.x, tt.y])
-    lm = np.array(a)
-    return lm
+        t = list(shape.parts())
+        a = []
+        for tt in t:
+            a.append([tt.x, tt.y])
+        lm = np.array(a)
+        lms.append(lm)
+    return lms
 
 
 def get_eyes_coors(landmark):
@@ -52,30 +53,32 @@ def get_rotation_from_eyes(left_eye_unaligned, right_eye_unaligned, left_eye_ali
 
 
 def get_alignment_positions(filepath: str, detector, predictor, eyes_distance_only: bool = True):
-    lm = get_landmark(filepath, detector, predictor)
+    lms = get_landmark(filepath, detector, predictor)
+    ret = []
+    for lm in lms:
+        lm_mouth_outer = lm[48: 60]  # left-clockwise
 
-    lm_mouth_outer = lm[48: 60]  # left-clockwise
+        # Calculate auxiliary vectors.
+        eye_left, eye_right = get_eyes_coors(lm)
+        eye_avg = (eye_left + eye_right) * 0.5
+        eye_to_eye = eye_right - eye_left
+        mouth_left = lm_mouth_outer[0]
+        mouth_right = lm_mouth_outer[6]
+        mouth_avg = (mouth_left + mouth_right) * 0.5
+        eye_to_mouth = mouth_avg - eye_avg
 
-    # Calculate auxiliary vectors.
-    eye_left, eye_right = get_eyes_coors(lm)
-    eye_avg = (eye_left + eye_right) * 0.5
-    eye_to_eye = eye_right - eye_left
-    mouth_left = lm_mouth_outer[0]
-    mouth_right = lm_mouth_outer[6]
-    mouth_avg = (mouth_left + mouth_right) * 0.5
-    eye_to_mouth = mouth_avg - eye_avg
+        # Choose oriented crop rectangle.
+        x = eye_to_eye - np.flipud(eye_to_mouth) * [-1, 1]
+        x /= np.hypot(*x)
+        if eyes_distance_only:
+            x *= np.hypot(*eye_to_eye) * 2.0
+        else:
+            x *= max(np.hypot(*eye_to_eye) * 2.0, np.hypot(*eye_to_mouth) * 1.8)
+        y = np.flipud(x) * [-1, 1]
+        c = eye_avg + eye_to_mouth * 0.1
 
-    # Choose oriented crop rectangle.
-    x = eye_to_eye - np.flipud(eye_to_mouth) * [-1, 1]
-    x /= np.hypot(*x)
-    if eyes_distance_only:
-        x *= np.hypot(*eye_to_eye) * 2.0
-    else:
-        x *= max(np.hypot(*eye_to_eye) * 2.0, np.hypot(*eye_to_mouth) * 1.8)
-    y = np.flipud(x) * [-1, 1]
-    c = eye_avg + eye_to_mouth * 0.1
-
-    return c, x, y
+        ret.append((c, x, y))
+    return ret
 
 
 def get_alignment_transformation(c: np.ndarray, x: np.ndarray, y: np.ndarray):
@@ -145,10 +148,13 @@ def crop_face_by_transform(filepath: str, quad: np.ndarray, qsize: int, output_s
 
 
 def align_face(filepath: str, detector, predictor):
-    c, x, y = get_alignment_positions(filepath, detector, predictor)
-    quad, qsize = get_alignment_transformation(c, x, y)
-    img = crop_face_by_transform(filepath, quad, qsize)
-    return img
+    cxys = get_alignment_positions(filepath, detector, predictor)
+    imgs = []
+    for c, x, y in cxys:
+        quad, qsize = get_alignment_transformation(c, x, y)
+        img = crop_face_by_transform(filepath, quad, qsize)
+        imgs.append(img)
+    return imgs
 
 
 def crop_face(filepath: str, detector, predictor, random_shift=0.0):

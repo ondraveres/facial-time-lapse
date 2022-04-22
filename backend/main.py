@@ -8,13 +8,14 @@ import sys
 import os
 import pprint
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageEnhance
 import dataclasses
 import torch
 import torchvision.transforms as transforms
 import urllib
 import random
 import uuid
+import math
 
 from io import BytesIO
 
@@ -39,7 +40,7 @@ dex.eval()
 print(torch.cuda.current_device(), torch.cuda.get_device_name(0))
 
 experiment_type = 'pSp_stylegan2'
-frames_between_images = 15
+
 
 # app = FaceAnalysis(providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
 # app.prepare(ctx_id=0, det_size=(1024, 1024))
@@ -87,15 +88,20 @@ net3, opts3 = load_encoder(checkpoint_path=model_path3)
 
 model_path2 = "pixel2style2pixel/pretrained_models/psp_ffhq_encode.pt"
 net2, opts2 = load_encoder(checkpoint_path=model_path2)
+
+model_path_toonify = "pixel2style2pixel/pretrained_models/psp_ffhq_toonify.pt"
+net_toonify, opts_toonify = load_encoder(checkpoint_path=model_path_toonify)
 toc = time.time()
 
-print('Loading two models took {:.4f} seconds.'.format(toc - tic))
+print('Loading three models took {:.4f} seconds.'.format(toc - tic))
 
 n_iters_per_batch = 3  # @param {type:"integer"}
 opts3.n_iters_per_batch = n_iters_per_batch
 opts3.resize_outputs = False  # generate outputs at full resolution
 
 img_transforms = EXPERIMENT_ARGS['transform']
+to_tensor = transforms.Compose([transforms.ToTensor(),
+                                transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
 
 model = VGGFace().double()
 
@@ -130,26 +136,27 @@ def removeOthers(pathsAndAges):
 
 
 def align_image(pathToImage):
-    alligned_im = run_alignment(pathToImage)
+    alligned_ims = run_alignment(pathToImage)
     os.remove(pathToImage)
-    unique_filename = str(uuid.uuid4())+'.jpg'
-    image_path = '../storage/'+unique_filename
-    alligned_im.save(image_path)
+    ret = []
+    for alligned_im in alligned_ims:
+        unique_filename = str(uuid.uuid4())+'.jpg'
+        image_path = '../storage/'+unique_filename
+        alligned_im.save(image_path)
 
-    age = round(dex.estimate(image_path)[0])
-    # img = cv2.imread(image_path)
-    # faces = app.get(img)
+        age = round(dex.estimate(image_path)[0])
+        # img = cv2.imread(image_path)
+        # faces = app.get(img)
 
-    # age = faces[0].age
+        # age = faces[0].age
+        ret.append((unique_filename, age))
+    return ret
 
-    return unique_filename, age
 
+def invertImage(pathToImage, encoder):
+    transformed_image = img_transforms(Image.open(pathToImage))
 
-def invertImage(pathToImage, version):
-    alligned_im = Image.open(pathToImage)
-    transformed_image = img_transforms(alligned_im)
-
-    if version == 3:
+    if encoder == 'restyle':
         tensor_with_images = torch.stack([transformed_image], dim=0)
         avg_image = get_average_image(net3)
 
@@ -173,7 +180,7 @@ def invertImage(pathToImage, version):
             print('Inference v3 took {:.4f} seconds.'.format(toc - tic))
         # return latent[0]
         return torch.from_numpy(result_latents[0][2])
-    if version == 2:
+    if encoder == 'psp':
         with torch.no_grad():
             tic = time.time()
 
@@ -182,17 +189,25 @@ def invertImage(pathToImage, version):
             toc = time.time()
             print('Inference v2 took {:.4f} seconds.'.format(toc - tic))
         return latent
+    if encoder == 'toonify':
+        with torch.no_grad():
+            tic = time.time()
+            _, latent = net_toonify(transformed_image.unsqueeze(0).to(
+                "cuda").float(), return_latents=True, resize=True)
+            toc = time.time()
+            print('Inference v2 took {:.4f} seconds.'.format(toc - tic))
+        return latent
 
 
-def createGif(paths, ages, version):
+def createGif(paths, ages, encoder, frames_between_images=30, frames_pixel_interpolation=15, max_opacity=0.3, output_size=512):
     result_latents = []
+    real_images = []
     for path in paths:
-        latent = invertImage(path, version)
-        if version == 2:
-            tensor_latent = latent.cuda()
-        if version == 3:
-            tensor_latent = latent.cuda()
+        latent = invertImage(path, encoder)
+        tensor_latent = latent.cuda()
         result_latents.append(tensor_latent)
+        real_images.append(
+            to_tensor(Image.open("../storage/"+path)).cuda())
     timelapse_images = []
 
     with torch.no_grad():
@@ -201,23 +216,78 @@ def createGif(paths, ages, version):
         for i in range(len(result_latents)-1):
             for j in range(frames_between_images):
                 t2 = j/(frames_between_images-1)
-                print(t2)
                 t1 = 1 - t2
                 avg = torch.add(torch.mul(result_latents[i], t1), torch.mul(
                     result_latents[i+1], t2))
                 mixed_image = None
-                if version == 2:
+                if encoder == 'psp':
                     mixed_image, _ = net2(
                         avg, return_latents=True, input_code=True, resize=False)
-                else:
+                elif encoder == 'restyle':
                     mixed_image, _ = net3(avg.unsqueeze(
                         0), return_latents=True, input_code=True, resize=False)
+                else:
+                    mixed_image, _ = net_toonify(
+                        avg, return_latents=True, input_code=True, resize=False)
+                # zero when j is zero, one when j is max
+                x = (j/(frames_between_images-1))
+                realmask_opacity = (math.cos(2*math.pi*x)
+                                    * max_opacity+max_opacity)/2
+                # realmask_opacity = (-abs(math.sin(math.pi*x)
+                #                     * max_opacity))+max_opacity
+                rest_opacity = 1 - realmask_opacity
 
-                timelapse_images.append(
-                    tensor2im(mixed_image[0]))
+                if j < frames_pixel_interpolation:
+                    mixed_image = real_images[i] * \
+                        realmask_opacity + mixed_image * rest_opacity
+                    print('one image', realmask_opacity)
+
+                elif j >= frames_between_images-frames_pixel_interpolation:
+                    mixed_image = mixed_image * rest_opacity + \
+                        real_images[i+1]*realmask_opacity
+                    print('another image', realmask_opacity)
+
+                enhancer = ImageEnhance.Sharpness(
+                    tensor2im(mixed_image[0], output_size))
+                # timelapse_images.append(enhancer.enhance(realmask_opacity*40))
+                timelapse_images.append(enhancer.enhance(5))
+        if len(result_latents) == 1:
+            avg = result_latents[0]
+            mixed_image = None
+            if version == 2:
+                mixed_image, _ = net2(
+                    avg, return_latents=True, input_code=True, resize=False)
+            else:
+                mixed_image, _ = net3(avg.unsqueeze(
+                    0), return_latents=True, input_code=True, resize=False)
+
+            enhancer = ImageEnhance.Sharpness(
+                tensor2im(mixed_image[0], output_size))
+            timelapse_images.append(enhancer.enhance(2))
     toc = time.time()
     print(
         'Generating images took {:.4f} seconds.'.format(toc - tic))
+    pathToGif = f'../storage/timelapse{random.randint(0,100000000)}.gif'
+    timelapse_images[0].save(fp=pathToGif, format='GIF', append_images=timelapse_images,
+                             save_all=True, duration=80, loop=0)
+    return pathToGif
+
+
+def run_pixel_experiment(image_paths, frames_between_images):
+    transformed_images = []
+    for image_path in image_paths:
+        transformed_images.append(
+            np.array(Image.open("../storage/"+image_path)))
+
+    timelapse_images = []
+    for i in range(len(transformed_images)-1):
+        print('i is', i)
+        for j in range(frames_between_images):
+            t2 = j/frames_between_images
+            t1 = 1 - t2
+            mix = transformed_images[i] * t1 + transformed_images[i+1]*t2
+            timelapse_images.append(Image.fromarray(mix.astype(np.uint8)))
+
     pathToGif = f'../storage/timelapse{random.randint(0,100000000)}.gif'
     timelapse_images[0].save(fp=pathToGif, format='GIF', append_images=timelapse_images,
                              save_all=True, duration=80, loop=0)
@@ -266,27 +336,30 @@ def saveImagesFromGoogleSearch(phrase, number_of_images):
         try:
             im = Image.open(BytesIO(response))
             im.convert('RGB').save("temp.jpg", 'jpeg')
-            path, age = align_image("temp.jpg")
-            left = 412
-            top = 412
-            right = 612
-            bottom = 612
-            new_aligned_image = Image.open(
-                '../storage/'+path).crop((left, top, right, bottom))
-            min_loss = 10000000000000000000000000
-            for aligned_image in aligned_images:
-                lossv = loss(numpy.asarray(new_aligned_image),
-                             numpy.asarray(aligned_image))
-                if lossv < min_loss:
-                    min_loss = lossv
-            if min_loss < 85:
-                raise Exception("image is duplicate")
+            pathsAndAges2 = align_image("temp.jpg")
+            for path, age in pathsAndAges2:
+                left = 412
+                top = 412
+                right = 612
+                bottom = 612
+                new_aligned_image = Image.open(
+                    '../storage/'+path).crop((left, top, right, bottom))
+                min_similarity = 100000000000000000000000000
+                print(aligned_images)
+                for aligned_image in aligned_images:
+                    similarity = loss(numpy.asarray(new_aligned_image),
+                                      numpy.asarray(aligned_image))
+                    if similarity < min_similarity:
+                        min_similarity = similarity
+                if min_similarity < 85:
+                    print(min_similarity)
+                    raise Exception("image is duplicate")
 
-            aligned_images.append(new_aligned_image)
+                aligned_images.append(new_aligned_image)
 
-            pathsAndAges.append(
-                ('http://halmos.felk.cvut.cz:5000/storage/'+path, age))
-            done += 1
+                pathsAndAges.append(
+                    (path, age))
+                done += 1
         except Exception as e:
             print(e)
             i += 1
@@ -294,48 +367,79 @@ def saveImagesFromGoogleSearch(phrase, number_of_images):
                 done = 2
             continue
 
-    # for page in results:
-    #     done = 0
-    #     i = 0
-    #     while done < 1:
-    #         try:
-    #             print(page["items"][i]["link"])
-    #             # headers = {
-    #             #     'User-Agent': 'Facial time lapse bot/0.0 ondra.veres@gmail.com',
-    #             #     'Transfer-Encoding': 'chunked'
-    #             # }
-    #             url = page["items"][i]["link"]
-    #             response = requests.get(url)
-
-    #             im = Image.open(BytesIO(response.content))
-    #             # im = Image.open(requests.get(
-    #             #     url, headers=headers, timeout=1).raw)
-    #             im.convert('RGB').save("temp.jpg", 'jpeg')
-    #             path, age = align_image("temp.jpg")
-    #             left = 384
-    #             top = 384
-    #             right = 384*2
-    #             bottom = 384*2
-    #             new_aligned_image = Image.open(
-    #                 '../storage/'+path).crop((left, top, right, bottom))
-    #             min_loss = 10000000000000000000000000
-    #             for aligned_image in aligned_images:
-    #                 lossv = loss(numpy.asarray(new_aligned_image),
-    #                              numpy.asarray(aligned_image))
-    #                 if lossv < min_loss:
-    #                     min_loss = lossv
-    #             if min_loss < 1:
-    #                 raise Exception("image is duplicate")
-
-    #             aligned_images.append(new_aligned_image)
-
-    #             pathsAndAges.append((path, age))
-    #             done += 1
-    #         except Exception as e:
-    #             print(e)
-    #             i += 1
-    #             if i == number_of_images:
-    #                 done = 2
-    #             continue
     return pathsAndAges
     # return [('hi', 22)]
+
+
+# def createGif(paths, ages, version, frames_between_images=30, frames_pixel_interpolation=15, max_opacity=0.5):
+#     result_latents = []
+#     real_images = []
+#     for path in paths:
+#         latent = invertImage(path, version)
+#         if version == 2:
+#             tensor_latent = latent.cuda()
+#         if version == 3:
+#             tensor_latent = latent.cuda()
+#         result_latents.append(tensor_latent)
+#         real_images.append(
+#             to_tensor(Image.open("../storage/"+path)).cuda())
+#     timelapse_images = []
+
+#     with torch.no_grad():
+
+#         tic = time.time()
+#         for i in range(len(result_latents)-1):
+#             for j in range(frames_between_images):
+#                 t2 = j/(frames_between_images-1)
+#                 t1 = 1 - t2
+#                 avg = torch.add(torch.mul(result_latents[i], t1), torch.mul(
+#                     result_latents[i+1], t2))
+#                 mixed_image = None
+#                 if version == 2:
+#                     mixed_image, _ = net2(
+#                         avg, return_latents=True, input_code=True, resize=False)
+#                 else:
+#                     mixed_image, _ = net3(avg.unsqueeze(
+#                         0), return_latents=True, input_code=True, resize=False)
+#                 realmask_opacity = 0
+#                 if j < frames_pixel_interpolation:
+#                     c2 = (j/(frames_pixel_interpolation-1))
+
+#                     smoothc2 = (math.sin((math.pi/2) * c2) *
+#                                 max_opacity)+(1-max_opacity)
+#                     realmask_opacity = 1 - smoothc2
+#                     print('multipliing real image by', realmask_opacity)
+#                     mixed_image = real_images[i] * \
+#                         realmask_opacity + mixed_image * smoothc2
+#                 elif j >= frames_between_images-frames_pixel_interpolation:
+#                     c2 = ((j-(frames_between_images-frames_pixel_interpolation)
+#                            )/(frames_pixel_interpolation-1))
+#                     realmask_opacity = math.sin((math.pi/2) * c2) * max_opacity
+
+#                     c1 = 1 - realmask_opacity
+#                     print('multipliing real image by', realmask_opacity)
+#                     mixed_image = mixed_image * c1 + \
+#                         real_images[i+1]*realmask_opacity
+
+#                 enhancer = ImageEnhance.Sharpness(tensor2im(mixed_image[0]))
+#                 # timelapse_images.append(enhancer.enhance(realmask_opacity*40))
+#                 timelapse_images.append(enhancer.enhance(5))
+#         if len(result_latents) == 1:
+#             avg = result_latents[0]
+#             mixed_image = None
+#             if version == 2:
+#                 mixed_image, _ = net2(
+#                     avg, return_latents=True, input_code=True, resize=False)
+#             else:
+#                 mixed_image, _ = net3(avg.unsqueeze(
+#                     0), return_latents=True, input_code=True, resize=False)
+
+#             enhancer = ImageEnhance.Sharpness(tensor2im(mixed_image[0]))
+#             timelapse_images.append(enhancer.enhance(2))
+#     toc = time.time()
+#     print(
+#         'Generating images took {:.4f} seconds.'.format(toc - tic))
+#     pathToGif = f'../storage/timelapse{random.randint(0,100000000)}.gif'
+#     timelapse_images[0].save(fp=pathToGif, format='GIF', append_images=timelapse_images,
+#                              save_all=True, duration=80, loop=0)
+#     return pathToGif

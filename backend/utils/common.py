@@ -36,13 +36,13 @@ def generate_random_transform(translate=0.3, rotate=25):
     return user_transforms
 
 
-def tensor2im(var: torch.tensor):
+def tensor2im(var: torch.tensor, size=512):
     var = var.cpu().detach().transpose(0, 2).transpose(0, 1).numpy()
     var = ((var + 1) / 2)
     var[var < 0] = 0
     var[var > 1] = 1
     var = var * 255
-    return Image.fromarray(var.astype('uint8')).resize((512, 512))
+    return Image.fromarray(var.astype('uint8')).resize((size, size))
 
 
 # def generate_mp4(out_name, images: List[np.ndarray], kwargs):

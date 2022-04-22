@@ -74,10 +74,10 @@ def run_alignment(image_path):
     predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
     detector = dlib.get_frontal_face_detector()
     print("Aligning image...")
-    aligned_image = align_face(filepath=str(
+    aligned_images = align_face(filepath=str(
         image_path), detector=detector, predictor=predictor)
-    print(f"Finished aligning image: {image_path}")
-    return aligned_image
+    print(f"Finished aligning image: {image_path}, number of faces: {len(aligned_images)}")
+    return aligned_images
 
 
 def crop_image(image_path):

@@ -1,15 +1,25 @@
 import React, { Component } from "react";
 import axios from 'axios';
 
+axios.interceptors.request.use(request => {
+  console.log('Starting Request', JSON.stringify(request, null, 2))
+  return request
+})
+
+axios.interceptors.response.use(response => {
+  console.log('Response:', JSON.stringify(response, null, 2))
+  return response
+})
+
 export default class FileUploadItem extends Component {
 
-  componentDidMount() {
-    this.setState({
-      status: 'init',
-      dragging: false,
-      count: 0
-    })
+  state = {
+    status: 'init',
+    dragging: false,
+    count: 0,
+
   }
+
   uploadFile = (event, myData = undefined) => {
     console.log('trying to upload file')
     this.setState({ status: 'waiting' })
@@ -27,7 +37,7 @@ export default class FileUploadItem extends Component {
         continue
       }
       data.append('image', files[property]);
-      console.log('image')
+      console.log(data.values())
     }
 
     axios.post(`http://halmos.felk.cvut.cz:5000/uploadFileAPI`, data)
@@ -63,11 +73,6 @@ export default class FileUploadItem extends Component {
 
 
   }
-
-  state = {
-    id: this.props.id,
-    description: this.props.description,
-  };
 
   tryToGetURL = () => {
     if (this.state.img) {

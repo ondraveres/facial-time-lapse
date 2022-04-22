@@ -1,22 +1,23 @@
 import React, { Component } from "react";
 import axios from 'axios';
 
+
+axios.interceptors.request.use(request => {
+  console.log('Starting Request', JSON.stringify(request, null, 2))
+  return request
+})
+
+axios.interceptors.response.use(response => {
+  console.log('Response:', JSON.stringify(response, null, 2))
+  return response
+})
 export default class EnterNameItem extends Component {
 
-  componentDidMount() {
-    this.setState({ status: 'init' })
+  state = {
+    status: 'init',
   }
 
-  state = {
-    id: this.props.id,
-    description: this.props.description,
-  };
 
-  styles = {
-    margin: "2vmin",
-    cursor: "pointer"
-
-  };
   tryToGetURL = () => {
     if (this.state.img) {
       return URL.createObjectURL(this.state.img)

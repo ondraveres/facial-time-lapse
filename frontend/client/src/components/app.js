@@ -23,24 +23,19 @@ export default class extends React.Component {
 
   state = {
     items: [
-      // { id: 0, path: 'psp_example.png', age: 24 }
+      // { id: 0, path: "carell-1.jpg", age: 12 },
+      // { id: 1, path: "carell-2.jpg", age: 17 },
+      // { id: 2, path: "carell-3.jpg", age: 26 },
+      // { id: 3, path: "carell-4.jpg", age: 41 },
     ],
     length: 0,
+    image1: undefined,
     image2: undefined,
     image3: undefined
   };
   handleDelete = (todoId) => {
     const items = this.state.items.filter((todo) => todo.id !== todoId);
     this.setState({ items });
-
-    fetch("http://localhost:3000/api/todos", {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(items),
-    });
   };
 
   handleAgeChange = (itemId, newAge) => {
@@ -73,11 +68,17 @@ export default class extends React.Component {
   };
 
   updateImages = (newImage, v) => {
+    if (v == 1) {
+      this.setState({ image1: newImage })
+    }
     if (v == 2) {
       this.setState({ image2: newImage })
     }
     if (v == 3) {
       this.setState({ image3: newImage })
+    }
+    if (v == 4) {
+      this.setState({ image4: newImage })
     }
 
   }
@@ -114,8 +115,17 @@ export default class extends React.Component {
 
         <div className=" h-10"></div >
         <div className="mx-auto container flex justify-evenly flex-wrap">
-          <Result items={this.state.items} image={this.state.image2} v={2} updateImages={this.updateImages} title='StyleGAN2 results' url='http://halmos.felk.cvut.cz:5000/generateGif2API' />
-          <Result items={this.state.items} image={this.state.image3} v={3} updateImages={this.updateImages} title='StyleGAN3 results' url='http://halmos.felk.cvut.cz:5000/generateGif3API' />
+          <Result uniqueid="a" items={this.state.items} image={this.state.image1} updateImages={this.updateImages} title='StyleGAN2 without image blending'
+            defaultEncoder="psp" defaultSize="512" defaultFrames="24" defaultOpacity="0" v={1} />
+          <Result uniqueid="b" items={this.state.items} image={this.state.image2} updateImages={this.updateImages} title='StyleGAN2 with image blending'
+            defaultEncoder="psp" defaultSize="512" defaultFrames="24" defaultOpacity="30" v={2} />
+        </div>
+        <div className="mx-auto container flex justify-evenly flex-wrap">
+          <Result uniqueid="c" items={this.state.items} image={this.state.image3} updateImages={this.updateImages} title='StyleGAN3 with image blending'
+            defaultEncoder="restyle" defaultSize="512" defaultFrames="24" defaultOpacity="30" v={3} />
+          <Result uniqueid="d" items={this.state.items} image={this.state.image4} updateImages={this.updateImages} title='Only image blending'
+            defaultEncoder="pixel" defaultSize="512" defaultFrames="24" defaultOpacity="100" v={4} />
+
         </div>
 
         <div className=" h-10"></div >

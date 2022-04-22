@@ -1,0 +1,30 @@
+POST http://halmos.felk.cvut.cz:5000/uploadNameAPI
+Content-Type: application/json;
+
+{
+    "celebrityName": "Steve Carell"
+}
+
+###
+
+POST http://halmos.felk.cvut.cz:5000/uploadFileAPI
+Content-Type: application/json;
+
+{
+
+}
+###
+
+POST http://halmos.felk.cvut.cz:5000/generateGif3API
+Content-Type: application/json;
+
+[
+    {
+      "path": "d193da85-fbce-4c72-a074-27ef54e3c64a.jpg",
+      "age": 25
+    },
+    {
+      "path": "d73542fe-ddb7-4011-addd-3ccaba045812.jpg",
+      "age": 26
+    }
+]

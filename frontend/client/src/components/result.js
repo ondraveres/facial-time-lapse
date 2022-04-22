@@ -3,20 +3,23 @@ import axios from 'axios';
 
 var ReactDOM = require('react-dom');
 var GifPlayer = require('react-gif-player');
+import 'tw-elements';
+
+import Dropdown from "./dropdown";
 
 export default class Result extends Component {
 
 
 
   state = {
-    status: 'init'
+    status: 'init',
+    opacity: this.props.defaultOpacity,
+    frames: this.props.defaultFrames,
+    encoder: this.props.defaultEncoder,
+    size: this.props.defaultSize,
+    title: this.props.title,
   };
 
-  styles = {
-    margin: "2vmin",
-    cursor: "pointer"
-
-  };
   tryToGetURL = () => {
 
     if (this.props.image) {
@@ -30,8 +33,16 @@ export default class Result extends Component {
   handleSubmit = (e) => {
     e.preventDefault();
     this.setState({ status: 'waiting' })
-    const data = this.props.items
-    axios.post(this.props.url, data, { responseType: 'blob' }).then(res => {
+    console.log('form data: ', e.target)
+    const data = {
+      encoder: this.state.encoder,
+      size: this.state.size,
+      frames: this.state.frames,
+      opacity: this.state.opacity,
+      items: this.props.items
+    }
+    const url = 'http://halmos.felk.cvut.cz:5000/generateGifAPI'
+    axios.post(url, data, { responseType: 'blob' }).then(res => {
       // then print response status
       console.log(res)
       this.props.updateImages(res.data, this.props.v)
@@ -70,18 +81,137 @@ export default class Result extends Component {
       <>
 
 
-        <div className="w-96 mx-auto inline-block">
+        <div className="w-96 mx-auto inline-block my-4">
           <div className="md:mt-0 md:col-span-2">
-            <div className="shadow sm:rounded-md sm:overflow-hidden">
+            <div className="shadow sm:rounded-md">
               <div className="px-4 py-4 bg-white space-y-6 sm:p-6">
                 {/* <h3 className="font-medium leading-tight text-3xl mt-0 mb-2 text-blue-600">First image</h3> */}
 
 
-                <h1 className="text-3xl font-medium text-gray-900 text-center">{this.props.title}</h1>
+                <h1 className="text-3xl font-medium text-gray-900 text-center">{this.state.title}</h1>
 
 
                 <div className={this.state.status === 'init' ? "my-0" : "hidden"}>
-                  <form onSubmit={this.handleSubmit} className="col-span-6 sm:col-span-3">
+
+                  <form onSubmit={this.handleSubmit} className="">
+                    <div className="accordion" id="accordionExample">
+
+                      <div className="accordion-item bg-white border border-gray-200">
+                        <h2 className="accordion-header mb-0" id="headingOne">
+                          <button className="accordion-button collapsed relative flex items-center w-full py-2 px-3 text-base text-gray-800 text-left bg-white border-0 rounded-none transition  focus:outline-none"
+                            type="button" data-bs-toggle="collapse"
+                            data-bs-target={'#' + this.props.uniqueid}
+                          >
+                            Settings
+                          </button>
+                        </h2>
+
+                        <div id={this.props.uniqueid} className="accordion-collapse border-0 collapse">
+                          <div className="accordion-body py-1 px-2">
+
+
+                            <div className="flex items-center justify-between">
+                              <label htmlFor="country" className="block text-sm font-medium text-gray-700">
+                                Encoder:
+                              </label>
+                              <select
+                                id="encoder"
+                                name="encoder"
+                                onChange={(e) => {
+                                  this.setState({
+                                    encoder: event.target.value,
+                                    title: `Custom settings ${(this.props.uniqueid).toUpperCase()}`,
+                                  })
+                                }
+                                }
+                                value={this.state.encoder}
+                                className="w-52 mt-1 block py-2 pl-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                              >
+                                <option value="psp">StyleGAN2 pSp</option>
+                                <option value="toonify">StyleGAN2 pSp Toonify</option>
+                                <option value="restyle">StyleGAN3 ReStyle pSp</option>
+                                <option value="pixel">None</option>
+                              </select>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                              <label htmlFor="country" className="block text-sm font-medium text-gray-700">
+                                Output gif size:
+                              </label>
+                              <select
+                                id="size"
+                                name="size"
+                                onChange={(e) => {
+                                  this.setState({
+                                    size: event.target.value,
+                                    title: `Custom settings ${(this.props.uniqueid).toUpperCase()}`
+                                  })
+                                }
+                                }
+                                value={this.state.size}
+                                className="w-52 mt-1 block py-2 pl-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                              >
+                                <option value="1024">1024x1024 px</option>
+                                <option value="512">512x512 px</option>
+                                <option value="256">256x256 px</option>
+                              </select>
+                            </div>
+
+
+
+                            <div className="flex items-center justify-between">
+                              <label htmlFor="first-name" className="block text-sm font-medium text-gray-700">
+                                Frames between two images
+                              </label>
+                              <input
+                                type="text"
+                                name="first-name"
+                                id="first-name"
+                                autoComplete="given-name"
+                                onChange={(e) => {
+                                  const value = parseInt(event.target.value)
+                                  if (value)
+                                    this.setState({
+                                      frames: value <= 60 ? value : 60,
+                                      title: `Custom settings ${(this.props.uniqueid).toUpperCase()}`,
+                                    })
+                                }
+                                }
+                                value={this.state.frames}
+                                className="px-0 text-center w-12 mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                              />
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                              <label htmlFor="first-name" className="block text-sm font-medium text-gray-700">
+                                Max blended image opacity (%)
+                              </label>
+                              <input
+                                type="text"
+                                name="first-name"
+                                id="first-name"
+                                autoComplete="given-name"
+                                onChange={(e) => {
+                                  const value = parseInt(event.target.value)
+                                  if (value)
+                                    this.setState({
+                                      opacity: value <= 100 ? value : 100,
+                                      title: `Custom settings ${(this.props.uniqueid).toUpperCase()}`,
+                                    })
+                                }
+                                }
+                                value={this.state.opacity}
+                                className="px-0 text-center w-12 mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+
+                    {/* <Dropdown /> */}
+
                     <div className="py-3 text-left flex justify-center">
                       <button
                         type="submit"
@@ -106,7 +236,122 @@ export default class Result extends Component {
                   {/* <GifPlayer gif={this.tryToGetURL()} /> */}
                   <img src={this.tryToGetURL()} />
 
+
                   <form onSubmit={this.handleSubmit} className="col-span-6 sm:col-span-3">
+                    <div className="accordion" id="accordionExample">
+
+                      <div className="accordion-item bg-white border border-gray-200">
+                        <h2 className="accordion-header mb-0" id="headingOne">
+                          <button className="accordion-button collapsed relative flex items-center w-full py-2 px-3 text-base text-gray-800 text-left bg-white border-0 rounded-none transition  focus:outline-none"
+                            type="button" data-bs-toggle="collapse"
+                            data-bs-target={'#' + this.props.uniqueid}
+                          >
+                            Settings
+    </button>
+                        </h2>
+
+                        <div id={this.props.uniqueid} className="accordion-collapse border-0 collapse">
+                          <div className="accordion-body py-1 px-2">
+
+
+                            <div className="flex items-center justify-between">
+                              <label htmlFor="country" className="block text-sm font-medium text-gray-700">
+                                Encoder:
+        </label>
+                              <select
+                                id="encoder"
+                                name="encoder"
+                                onChange={(e) => {
+                                  this.setState({
+                                    encoder: event.target.value,
+                                    title: `Custom settings ${(this.props.uniqueid).toUpperCase()}`,
+                                  })
+                                }
+                                }
+                                value={this.state.encoder}
+                                className="w-52 mt-1 block py-2 pl-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                              >
+                                <option value="psp">StyleGAN2 pSp</option>
+                                <option value="toonify">StyleGAN2 pSp Toonify</option>
+                                <option value="restyle">StyleGAN3 ReStyle pSp</option>
+                                <option value="pixel">None</option>
+                              </select>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                              <label htmlFor="country" className="block text-sm font-medium text-gray-700">
+                                Output gif size:
+        </label>
+                              <select
+                                id="size"
+                                name="size"
+                                onChange={(e) => {
+                                  this.setState({
+                                    size: event.target.value,
+                                    title: `Custom settings ${(this.props.uniqueid).toUpperCase()}`
+                                  })
+                                }
+                                }
+                                value={this.state.size}
+                                className="w-52 mt-1 block py-2 pl-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                              >
+                                <option value="1024">1024x1024 px</option>
+                                <option value="512">512x512 px</option>
+                                <option value="256">256x256 px</option>
+                              </select>
+                            </div>
+
+
+
+                            <div className="flex items-center justify-between">
+                              <label htmlFor="first-name" className="block text-sm font-medium text-gray-700">
+                                Frames between two images
+        </label>
+                              <input
+                                type="text"
+                                name="first-name"
+                                id="first-name"
+                                autoComplete="given-name"
+                                onChange={(e) => {
+                                  const value = parseInt(event.target.value)
+                                  if (value)
+                                    this.setState({
+                                      frames: value <= 60 ? value : 60,
+                                      title: `Custom settings ${(this.props.uniqueid).toUpperCase()}`,
+                                    })
+                                }
+                                }
+                                value={this.state.frames}
+                                className="px-0 text-center w-12 mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                              />
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                              <label htmlFor="first-name" className="block text-sm font-medium text-gray-700">
+                                Max blended image opacity (%)
+        </label>
+                              <input
+                                type="text"
+                                name="first-name"
+                                id="first-name"
+                                autoComplete="given-name"
+                                onChange={(e) => {
+                                  const value = parseInt(event.target.value)
+                                  if (value)
+                                    this.setState({
+                                      opacity: value <= 100 ? value : 100,
+                                      title: `Custom settings ${(this.props.uniqueid).toUpperCase()}`,
+                                    })
+                                }
+                                }
+                                value={this.state.opacity}
+                                className="px-0 text-center w-12 mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                     <div className="py-3 text-left flex justify-center">
                       <button
                         type="submit"
@@ -121,6 +366,120 @@ export default class Result extends Component {
                   <p>Error status: {this.state.errorStatus}<br />
                     Error data: {this.state.errorData} </p>
                   <form onSubmit={this.handleSubmit} className="col-span-6 sm:col-span-3">
+                    <div className="accordion" id="accordionExample">
+
+                      <div className="accordion-item bg-white border border-gray-200">
+                        <h2 className="accordion-header mb-0" id="headingOne">
+                          <button className="accordion-button collapsed relative flex items-center w-full py-2 px-3 text-base text-gray-800 text-left bg-white border-0 rounded-none transition  focus:outline-none"
+                            type="button" data-bs-toggle="collapse"
+                            data-bs-target={'#' + this.props.uniqueid}
+                          >
+                            Settings
+    </button>
+                        </h2>
+
+                        <div id={this.props.uniqueid} className="accordion-collapse border-0 collapse">
+                          <div className="accordion-body py-1 px-2">
+
+
+                            <div className="flex items-center justify-between">
+                              <label htmlFor="country" className="block text-sm font-medium text-gray-700">
+                                Encoder:
+        </label>
+                              <select
+                                id="encoder"
+                                name="encoder"
+                                onChange={(e) => {
+                                  this.setState({
+                                    encoder: event.target.value,
+                                    title: `Custom settings ${(this.props.uniqueid).toUpperCase()}`,
+                                  })
+                                }
+                                }
+                                value={this.state.encoder}
+                                className="w-52 mt-1 block py-2 pl-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                              >
+                                <option value="psp">StyleGAN2 pSp</option>
+                                <option value="toonify">StyleGAN2 pSp Toonify</option>
+                                <option value="restyle">StyleGAN3 ReStyle pSp</option>
+                                <option value="pixel">None</option>
+                              </select>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                              <label htmlFor="country" className="block text-sm font-medium text-gray-700">
+                                Output gif size:
+        </label>
+                              <select
+                                id="size"
+                                name="size"
+                                onChange={(e) => {
+                                  this.setState({
+                                    size: event.target.value,
+                                    title: `Custom settings ${(this.props.uniqueid).toUpperCase()}`
+                                  })
+                                }
+                                }
+                                value={this.state.size}
+                                className="w-52 mt-1 block py-2 pl-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                              >
+                                <option value="1024">1024x1024 px</option>
+                                <option value="512">512x512 px</option>
+                                <option value="256">256x256 px</option>
+                              </select>
+                            </div>
+
+
+
+                            <div className="flex items-center justify-between">
+                              <label htmlFor="first-name" className="block text-sm font-medium text-gray-700">
+                                Frames between two images
+        </label>
+                              <input
+                                type="text"
+                                name="first-name"
+                                id="first-name"
+                                autoComplete="given-name"
+                                onChange={(e) => {
+                                  const value = parseInt(event.target.value)
+                                  if (value)
+                                    this.setState({
+                                      frames: value <= 60 ? value : 60,
+                                      title: `Custom settings ${(this.props.uniqueid).toUpperCase()}`,
+                                    })
+                                }
+                                }
+                                value={this.state.frames}
+                                className="px-0 text-center w-12 mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                              />
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                              <label htmlFor="first-name" className="block text-sm font-medium text-gray-700">
+                                Max blended image opacity (%)
+        </label>
+                              <input
+                                type="text"
+                                name="first-name"
+                                id="first-name"
+                                autoComplete="given-name"
+                                onChange={(e) => {
+                                  const value = parseInt(event.target.value)
+                                  if (value)
+                                    this.setState({
+                                      opacity: value <= 100 ? value : 100,
+                                      title: `Custom settings ${(this.props.uniqueid).toUpperCase()}`,
+                                    })
+                                }
+                                }
+                                value={this.state.opacity}
+                                className="px-0 text-center w-12 mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                     <div className="py-3 text-left flex justify-center">
                       <button
                         type="submit"

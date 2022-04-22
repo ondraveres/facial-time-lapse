@@ -60,7 +60,7 @@ module.exports = {
     new webpack.HotModuleReplacementPlugin(),
     new HtmlWebpackPlugin({
       template: 'client/src/index.html',
-      publicPath: '/'
+      publicPath: 'http://ptak.felk.cvut.cz:3000/'
     })
   ],
   resolve: {
