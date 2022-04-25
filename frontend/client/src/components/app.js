@@ -114,18 +114,17 @@ export default class extends React.Component {
 
 
         <div className=" h-10"></div >
-        <div className="mx-auto container flex justify-evenly flex-wrap">
+        <div className="mx-auto flex justify-evenly flex-wrap max-w-7xl">
           <Result uniqueid="a" items={this.state.items} image={this.state.image1} updateImages={this.updateImages} title='StyleGAN2 without image blending'
             defaultEncoder="psp" defaultSize="512" defaultFrames="24" defaultOpacity="0" v={1} />
           <Result uniqueid="b" items={this.state.items} image={this.state.image2} updateImages={this.updateImages} title='StyleGAN2 with image blending'
-            defaultEncoder="psp" defaultSize="512" defaultFrames="24" defaultOpacity="30" v={2} />
+            defaultEncoder="psp" defaultSize="512" defaultFrames="24" defaultOpacity="50" v={2} />
+          <Result uniqueid="c" items={this.state.items} image={this.state.image3} updateImages={this.updateImages} title='StyleGAN3 with image blending'
+            defaultEncoder="restyle" defaultSize="512" defaultFrames="24" defaultOpacity="50" v={3} />
         </div>
         <div className="mx-auto container flex justify-evenly flex-wrap">
-          <Result uniqueid="c" items={this.state.items} image={this.state.image3} updateImages={this.updateImages} title='StyleGAN3 with image blending'
-            defaultEncoder="restyle" defaultSize="512" defaultFrames="24" defaultOpacity="30" v={3} />
           <Result uniqueid="d" items={this.state.items} image={this.state.image4} updateImages={this.updateImages} title='Only image blending'
             defaultEncoder="pixel" defaultSize="512" defaultFrames="24" defaultOpacity="100" v={4} />
-
         </div>
 
         <div className=" h-10"></div >

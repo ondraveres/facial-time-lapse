@@ -193,7 +193,7 @@ export default class Result extends Component {
                                 autoComplete="given-name"
                                 onChange={(e) => {
                                   const value = parseInt(event.target.value)
-                                  if (value)
+                                  if (!Number.isNaN(value))
                                     this.setState({
                                       opacity: value <= 100 ? value : 100,
                                       title: `Custom settings ${(this.props.uniqueid).toUpperCase()}`,
@@ -337,7 +337,7 @@ export default class Result extends Component {
                                 autoComplete="given-name"
                                 onChange={(e) => {
                                   const value = parseInt(event.target.value)
-                                  if (value)
+                                  if (!Number.isNaN(value))
                                     this.setState({
                                       opacity: value <= 100 ? value : 100,
                                       title: `Custom settings ${(this.props.uniqueid).toUpperCase()}`,
@@ -375,7 +375,7 @@ export default class Result extends Component {
                             data-bs-target={'#' + this.props.uniqueid}
                           >
                             Settings
-    </button>
+                          </button>
                         </h2>
 
                         <div id={this.props.uniqueid} className="accordion-collapse border-0 collapse">
@@ -385,7 +385,7 @@ export default class Result extends Component {
                             <div className="flex items-center justify-between">
                               <label htmlFor="country" className="block text-sm font-medium text-gray-700">
                                 Encoder:
-        </label>
+                              </label>
                               <select
                                 id="encoder"
                                 name="encoder"
@@ -409,7 +409,7 @@ export default class Result extends Component {
                             <div className="flex items-center justify-between">
                               <label htmlFor="country" className="block text-sm font-medium text-gray-700">
                                 Output gif size:
-        </label>
+                              </label>
                               <select
                                 id="size"
                                 name="size"
@@ -465,7 +465,7 @@ export default class Result extends Component {
                                 autoComplete="given-name"
                                 onChange={(e) => {
                                   const value = parseInt(event.target.value)
-                                  if (value)
+                                  if (!Number.isNaN(value))
                                     this.setState({
                                       opacity: value <= 100 ? value : 100,
                                       title: `Custom settings ${(this.props.uniqueid).toUpperCase()}`,

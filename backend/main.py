@@ -247,10 +247,16 @@ def createGif(paths, ages, encoder, frames_between_images=30, frames_pixel_inter
                         real_images[i+1]*realmask_opacity
                     print('another image', realmask_opacity)
 
-                enhancer = ImageEnhance.Sharpness(
-                    tensor2im(mixed_image[0], output_size))
+                gif_frame = tensor2im(mixed_image[0], output_size)
+                gif_frame = gif_frame.convert('RGB')
+                gif_frame.save(
+                    f'data/{encoder}{str(int(max_opacity*100))}/{i*frames_between_images+j}.jpg')
+                gif_frame = gif_frame.quantize()
+                timelapse_images.append(gif_frame)
+                # enhancer = ImageEnhance.Sharpness(
+                #    tensor2im(mixed_image[0], output_size))
                 # timelapse_images.append(enhancer.enhance(realmask_opacity*40))
-                timelapse_images.append(enhancer.enhance(5))
+                # timelapse_images.append(enhancer.enhance(5))
         if len(result_latents) == 1:
             avg = result_latents[0]
             mixed_image = None
@@ -276,20 +282,26 @@ def createGif(paths, ages, encoder, frames_between_images=30, frames_pixel_inter
 def run_pixel_experiment(image_paths, frames_between_images):
     transformed_images = []
     for image_path in image_paths:
+        img = Image.open("../storage/"+image_path)
         transformed_images.append(
-            np.array(Image.open("../storage/"+image_path)))
+            np.array(img))
 
     timelapse_images = []
     for i in range(len(transformed_images)-1):
-        print('i is', i)
         for j in range(frames_between_images):
             t2 = j/frames_between_images
             t1 = 1 - t2
             mix = transformed_images[i] * t1 + transformed_images[i+1]*t2
-            timelapse_images.append(Image.fromarray(mix.astype(np.uint8)))
+            img = Image.fromarray(mix.astype('uint8'))
+            # img.putpalette(transformed_images[i][1])
+            img = img.convert('RGB')
+            img.save(f'data/pixel/{i*frames_between_images+j}.jpg')
+            img = img.quantize()
+            img.save('pixelated2.gif')
+            timelapse_images.append(img)
 
     pathToGif = f'../storage/timelapse{random.randint(0,100000000)}.gif'
-    timelapse_images[0].save(fp=pathToGif, format='GIF', append_images=timelapse_images,
+    timelapse_images[0].save(fp=pathToGif, format='GIF',  append_images=timelapse_images,
                              save_all=True, duration=80, loop=0)
     return pathToGif
 
