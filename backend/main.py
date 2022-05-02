@@ -103,13 +103,13 @@ img_transforms = EXPERIMENT_ARGS['transform']
 to_tensor = transforms.Compose([transforms.ToTensor(),
                                 transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
 
-model = VGGFace().double()
+# model = VGGFace().double()
 
-model_dict = torch.load('models/vggface.pth',
-                        map_location=lambda storage, loc: storage)
-model.load_state_dict(model_dict)
-# Set model to evaluation mode
-model.eval()
+# model_dict = torch.load('models/vggface.pth',
+#                         map_location=lambda storage, loc: storage)
+# model.load_state_dict(model_dict)
+# # Set model to evaluation mode
+# model.eval()
 
 
 def removeOthers(pathsAndAges):
