@@ -44,14 +44,20 @@ y = np.concatenate((y1,y2))
 ax.fill_between(x1, y1, alpha = 0.4, color = 'tab:orange', edgecolor='none')
 ax.fill_between(x2, y2, alpha = 0.4, color = 'tab:olive', edgecolor = 'none')
 ax.fill_between(x, y, 1, alpha = 0.4, color = 'tab:blue', edgecolor = 'none')
-
+p, =ax.plot([0,1],[0.5,0.5], color = 'tab:grey', linestyle = 'dashed', label=r'$\omega$', linewidth=2)
 
 plt.xticks(np.arange(11)/10)
 #plt.legend()
 plt.subplots_adjust(top=0.9, bottom=0.1, left=0.1, right=0.9)
 ax.set_xlabel(r'Interpolation parameter $\alpha$')
-ax.set_ylabel('Loss Value')
+ax.set_ylabel('Blended image composition')
 ax.set_title('Image blending')
+
+red_patch = mpatches.Patch(color='tab:blue', label=r'Generated image with $\alpha$')
+orange_patch = mpatches.Patch(color='tab:orange', label=r'First real image')
+olive_patch = mpatches.Patch(color='tab:olive', label=r'Second real image')
+plt.legend(handles=[red_patch, orange_patch, olive_patch, p])
+
 
 # remove tick marks
 ax.xaxis.set_tick_params(size=0)
