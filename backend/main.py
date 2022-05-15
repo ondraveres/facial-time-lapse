@@ -34,6 +34,7 @@ from utils.inference_utils import run_on_batch, load_encoder, get_average_image
 import dex
 
 from lib import VGGFace
+from losses import arcface_embeddings
 
 dex.eval()
 
@@ -103,26 +104,28 @@ img_transforms = EXPERIMENT_ARGS['transform']
 to_tensor = transforms.Compose([transforms.ToTensor(),
                                 transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
 
-# model = VGGFace().double()
+model = VGGFace().double()
 
-# model_dict = torch.load('models/vggface.pth',
-#                         map_location=lambda storage, loc: storage)
-# model.load_state_dict(model_dict)
-# # Set model to evaluation mode
-# model.eval()
+model_dict = torch.load('models/vggface.pth',
+                        map_location=lambda storage, loc: storage)
+model.load_state_dict(model_dict)
+# Set model to evaluation mode
+model.eval()
 
 
 def removeOthers(pathsAndAges):
     descriptorsList = []
     for pathAndAge in pathsAndAges:
-        img = cv2.imread('../storage/'+pathAndAge[0])
-        img = cv2.resize(img, (224, 224))
-        # Forward test image through VGGFace
-        img = torch.Tensor(img).permute(
-            2, 0, 1).view(1, 3, 224, 224).double()
-        img -= torch.Tensor(np.array([129.1863, 104.7624,
-                            93.5940])).double().view(1, 3, 1, 1)
-        descriptor = model(img)[0].detach().numpy()
+        # img = cv2.imread('../storage/'+pathAndAge[0])
+        # img = cv2.resize(img, (224, 224))
+        # # Forward test image through VGGFace
+        # img = torch.Tensor(img).permute(
+        #     2, 0, 1).view(1, 3, 224, 224).double()
+        # img -= torch.Tensor(np.array([129.1863, 104.7624,
+        #                     93.5940])).double().view(1, 3, 1, 1)
+        # descriptor = model(img)[0].detach().numpy()
+        descriptor = arcface_embeddings(
+            Image.open('../storage/'+pathAndAge[0]))
         descriptorsList.append(descriptor)
         print(descriptor.shape)
     descriptorsArray = numpy.stack(descriptorsList, axis=0)
@@ -130,7 +133,12 @@ def removeOthers(pathsAndAges):
     pathsAndDistances = []
     for i in range(len(descriptorsList)):
         dist = ((descriptorsList[i]-descriptor_median)**2).mean()
-        pathsAndDistances.append((pathsAndAges[i][0], dist))
+        if(dist >= 0.002):
+            pathsAndDistances.append(
+                (pathsAndAges[i][0], pathsAndAges[i][1], True))
+        else:
+            pathsAndDistances.append(
+                (pathsAndAges[i][0], pathsAndAges[i][1], False))
 
     return pathsAndDistances
 

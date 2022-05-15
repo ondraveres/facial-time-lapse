@@ -51,11 +51,12 @@ export default class extends React.Component {
     this.setState({ items: orderedItems });
   }
 
-  handleAdd = (path, age) => {
+  handleAdd = (path, age, recommend = false) => {
     const items = this.state.items.concat({
       id: this.state.length + 1,
       path: path,
       age: age,
+      recommend: recommend
     });
     this.setState({
       length: this.state.length + 1,
@@ -106,6 +107,7 @@ export default class extends React.Component {
               id={item.id}
               path={item.path}
               age={item.age}
+              recommend={item.recommend}
               onDelete={this.handleDelete}
               handleAgeChange={this.handleAgeChange}
             />

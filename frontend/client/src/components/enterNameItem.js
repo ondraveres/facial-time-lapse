@@ -36,7 +36,8 @@ export default class EnterNameItem extends Component {
       res.data.forEach((pathAndAge) => {
         const path = pathAndAge[0]
         const age = pathAndAge[1]
-        this.props.handleAdd(path, age)
+        const recommend = pathAndAge[2]
+        this.props.handleAdd(path, age, recommend)
       })
       // this.setState({ img: res.data[0] })
       this.setState({ status: 'init' })

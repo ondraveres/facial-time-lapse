@@ -1948,6 +1948,10 @@ select {
   height: 3rem;
 }
 
+.h-36 {
+  height: 9rem;
+}
+
 .h-6 {
   height: 1.5rem;
 }
@@ -1974,6 +1978,10 @@ select {
 
 .w-12 {
   width: 3rem;
+}
+
+.w-36 {
+  width: 9rem;
 }
 
 .w-52 {
@@ -2146,6 +2154,11 @@ select {
   background-color: rgb(243 244 246 / var(--tw-bg-opacity));
 }
 
+.bg-red-100 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(254 226 226 / var(--tw-bg-opacity));
+}
+
 .bg-red-600 {
   --tw-bg-opacity: 1;
   background-color: rgb(220 38 38 / var(--tw-bg-opacity));
@@ -2239,6 +2252,10 @@ select {
 
 .pl-1 {
   padding-left: 0.25rem;
+}
+
+.pt-3 {
+  padding-top: 0.75rem;
 }
 
 .pl-2 {

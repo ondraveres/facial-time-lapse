@@ -1,3 +1,4 @@
+import math
 from PIL import Image
 
 
@@ -30,30 +31,31 @@ plt.rcParams['axes.titley'] = 1.02
 
 
 n = 100
-import math
 fig, ax = plt.subplots()
 fig.set_figheight(5)
 fig.set_figwidth(10)
 x1 = np.arange(0, n/2, 1)/(n-1)
 x2 = np.arange(n/2, n, 1)/(n-1)
-x = np.concatenate((x1,x2))
+x = np.concatenate((x1, x2))
 y1 = (np.cos(2*math.pi*x1)*MAX_OPACITY+MAX_OPACITY)/2
 y2 = (np.cos(2*math.pi*x2)*MAX_OPACITY+MAX_OPACITY)/2
-y = np.concatenate((y1,y2))
+y = np.concatenate((y1, y2))
 
-ax.fill_between(x1, y1, alpha = 0.4, color = 'tab:orange', edgecolor='none')
-ax.fill_between(x2, y2, alpha = 0.4, color = 'tab:olive', edgecolor = 'none')
-ax.fill_between(x, y, 1, alpha = 0.4, color = 'tab:blue', edgecolor = 'none')
-p, =ax.plot([0,1],[0.5,0.5], color = 'tab:grey', linestyle = 'dashed', label=r'$\omega$', linewidth=2)
+ax.fill_between(x1, y1, alpha=0.4, color='tab:orange', edgecolor='none')
+ax.fill_between(x2, y2, alpha=0.4, color='tab:olive', edgecolor='none')
+ax.fill_between(x, y, 1, alpha=0.4, color='tab:blue', edgecolor='none')
+p, = ax.plot([0, 1], [0.5, 0.5], color='tab:grey',
+             linestyle='dashed', label=r'$\gamma$', linewidth=2)
 
 plt.xticks(np.arange(11)/10)
-#plt.legend()
+# plt.legend()
 plt.subplots_adjust(top=0.9, bottom=0.1, left=0.1, right=0.9)
 ax.set_xlabel(r'Interpolation parameter $\alpha$')
 ax.set_ylabel('Blended image composition')
 ax.set_title('Image blending')
 
-red_patch = mpatches.Patch(color='tab:blue', label=r'Generated image with $\alpha$')
+red_patch = mpatches.Patch(
+    color='tab:blue', label=r'Generated image with $\alpha$')
 orange_patch = mpatches.Patch(color='tab:orange', label=r'First real image')
 olive_patch = mpatches.Patch(color='tab:olive', label=r'Second real image')
 plt.legend(handles=[red_patch, orange_patch, olive_patch, p])

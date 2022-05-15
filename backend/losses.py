@@ -75,3 +75,35 @@ def cosine_distance(image1, image2):
 
     cosine_dist = np.dot(embeddings[0], embeddings[1].T)
     return cosine_dist
+
+
+def arcface_embeddings(image1):
+
+    embeddings = []
+    for img in [image1]:
+        _, landmarks = detect_faces(img)
+
+        if (len(landmarks) == 0):
+            print("{} is discarded due to non-detected landmarks!")
+            continue
+        facial5points = [[landmarks[0][j], landmarks[0][j + 5]]
+                         for j in range(5)]
+        warped_face = warp_and_crop_face(
+            np.array(img),
+            facial5points,
+            reference,
+            crop_size=(crop_size, crop_size),
+        )
+        img_warped = Image.fromarray(warped_face)
+
+        image_tensor = transform(img_warped).unsqueeze(0)
+
+        embedding = np.zeros([512])
+        with torch.no_grad():
+            embedding[:] = F.normalize(
+                backbone(image_tensor.to(device))).cpu()
+            print('first item in embeddings is', embedding[0])
+            embeddings.append(embedding)
+
+    #cosine_dist = np.dot(embeddings[0], embeddings[1].T)
+    return embeddings[0]

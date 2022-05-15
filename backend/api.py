@@ -20,6 +20,9 @@ def file_uploader():
                 pathsAndAges += align_image(file.filename)
             except Exception as e:
                 print(e)
+        if(len(pathsAndAges) >= 4):
+            pathsAndAges = removeOthers(pathsAndAges)
+
         response = jsonify(pathsAndAges)
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response
@@ -34,7 +37,7 @@ def name_to_gif():
         pathsAndAges = saveImagesFromGoogleSearch(name, 3)
         # tic = time.time()
 
-        # pathsAndAges = removeOthers(pathsAndAges)
+        pathsAndAges = removeOthers(pathsAndAges)
         # toc = time.time()
 
         #print('removeOthers took {:.4f} seconds.'.format(toc - tic))

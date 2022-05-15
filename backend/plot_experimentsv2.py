@@ -124,16 +124,18 @@ def cv2_to_pil(opencv_image):
     pil_image = Image.fromarray(color_coverted)
     return pil_image
 
+
 def bluryness(pil):
-    open_cv_image = np.array(pil) 
-    # Convert RGB to BGR 
+    open_cv_image = np.array(pil)
+    # Convert RGB to BGR
     open_cv_image = open_cv_image[:, :, ::-1].copy()
-    
-    	
+
     gray = cv2.cvtColor(open_cv_image, cv2.COLOR_BGR2GRAY)
-    blur_map1 = blur_map = blur_detector.detectBlur(gray, downsampling_factor=4, num_scales=4, scale_start=2, num_iterations_RF_filter=3)
+    blur_map1 = blur_map = blur_detector.detectBlur(
+        gray, downsampling_factor=4, num_scales=4, scale_start=2, num_iterations_RF_filter=3)
     cv2.imwrite('blur_map.jpg', blur_map1)
     return np.sum(blur_map1)/(1024**2)
+
 
 def load_images_from_folder(folder):
     images = []
@@ -173,25 +175,26 @@ plt.rcParams['axes.titley'] = 1.02
 
 
 original_images, original_images_tensors = load_images_from_folder(
-    'data/dan-al')
+    'data copy/dan-al')
 
 pixels, pixels_tensors = load_images_from_folder(
-    'data/pixel')
+    'data copy/pixel')
 
 psp0s, psp0s_tensors = load_images_from_folder(
-    'data/psp0')
+    'data copy/psp0')
 
 psp50s, psp50s_tensors = load_images_from_folder(
-    'data/psp50')
+    'data copy/psp50')
 
 restyle0s, restyle0s_tensors = load_images_from_folder(
-    'data/restyle0')
+    'data copy/restyle0')
 
 restyle50s, restyle50s_tensors = load_images_from_folder(
-    'data/restyle50')
+    'data copy/restyle50')
 
 n = len(original_images)
 
+real_losses = np.zeros(n)
 pixels_losses = np.zeros(n)
 psp0_losses = np.zeros(n)
 psp50_losses = np.zeros(n)
@@ -205,12 +208,16 @@ for i in range(n):
     # psp50_losses[i] = pixel_loss(original_images[i], psp50s[i])
     # restyle0_losses[i] = pixel_loss(original_images[i], restyle0s[i])
     # restyle50_losses[i] = pixel_loss(original_images[i], restyle50s[i])
-
-    pixels_losses[i] = 1-cosine_distance(original_images[i], pixels[i])
-    psp0_losses[i] = 1-cosine_distance(original_images[i], psp0s[i])
-    psp50_losses[i] = 1-cosine_distance(original_images[i], psp50s[i])
-    restyle0_losses[i] = 1-cosine_distance(original_images[i], restyle0s[i])
-    restyle50_losses[i] = 1-cosine_distance(original_images[i], restyle50s[i])
+    if(i < n/2):
+        nn_image = original_images[0]
+    else:
+        nn_image = original_images[26]
+    real_losses[i] = 1-cosine_distance(nn_image, original_images[i])
+    pixels_losses[i] = 1-cosine_distance(nn_image, pixels[i])
+    psp0_losses[i] = 1-cosine_distance(nn_image, psp0s[i])
+    psp50_losses[i] = 1-cosine_distance(nn_image, psp50s[i])
+    restyle0_losses[i] = 1-cosine_distance(nn_image, restyle0s[i])
+    restyle50_losses[i] = 1-cosine_distance(nn_image, restyle50s[i])
 
     # pixels_losses[i] = loss_fn_vgg(original_images_tensors[i], pixels_tensors[i])
     # psp0_losses[i] = loss_fn_vgg(original_images_tensors[i], psp0s_tensors[i])
@@ -223,7 +230,7 @@ for i in range(n):
     #restyle50_losses[i] = bluryness(restyle50s[i])
 
     #id_losses[index] = 1-cosine_distance(original_image, generated_img)
-    #l_pips_losses[index] = loss_fn_vgg(
+    # l_pips_losses[index] = loss_fn_vgg(
     #    original_image_tensor, compared_images_tensors[index])
 
 fig, ax = plt.subplots()
@@ -237,6 +244,7 @@ ax.plot(x, psp0_losses, label="SG2 pSp")
 ax.plot(x, psp50_losses, label="SG2 pSp with image blending")
 ax.plot(x, restyle0_losses, label="SG3 ReStyle")
 ax.plot(x, restyle50_losses, label="SG3 ReStyle with image blending")
+ax.plot(x, real_losses, label="Facial time-lapse imitation Danielle")
 
 
 # for index, anotation_img in enumerate(compared_images):
@@ -259,7 +267,7 @@ plt.legend()
 plt.subplots_adjust(top=0.9, bottom=0.1, left=0.1, right=0.9)
 ax.set_xlabel(r'Interpolation parameter $\alpha$')
 ax.set_ylabel('Loss Value')
-ax.set_title('Identity Loss')
+ax.set_title('Nearest Neighbour Identity Loss')
 
 # remove tick marks
 ax.xaxis.set_tick_params(size=0)

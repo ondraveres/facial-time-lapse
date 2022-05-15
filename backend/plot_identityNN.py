@@ -1,14 +1,3 @@
-# import argparse
-# import os
-# import cv2
-# import numpy as np
-# from embeddings import get_embeddings
-
-# import torch.utils.data as data
-# import torchvision.datasets as datasets
-# import torch.nn.functional as F
-# import torchvision.transforms as transforms
-# from backbone import Backbone
 from PIL import Image
 
 # from cosinedif import cosine_distance
@@ -124,16 +113,18 @@ def cv2_to_pil(opencv_image):
     pil_image = Image.fromarray(color_coverted)
     return pil_image
 
+
 def bluryness(pil):
-    open_cv_image = np.array(pil) 
-    # Convert RGB to BGR 
+    open_cv_image = np.array(pil)
+    # Convert RGB to BGR
     open_cv_image = open_cv_image[:, :, ::-1].copy()
-    
-    	
+
     gray = cv2.cvtColor(open_cv_image, cv2.COLOR_BGR2GRAY)
-    blur_map1 = blur_map = blur_detector.detectBlur(gray, downsampling_factor=4, num_scales=4, scale_start=2, num_iterations_RF_filter=3)
+    blur_map1 = blur_map = blur_detector.detectBlur(
+        gray, downsampling_factor=4, num_scales=4, scale_start=2, num_iterations_RF_filter=3)
     cv2.imwrite('blur_map.jpg', blur_map1)
     return np.sum(blur_map1)/(1024**2)
+
 
 def load_images_from_folder(folder):
     images = []
@@ -173,7 +164,7 @@ plt.rcParams['axes.titley'] = 1.02
 
 
 original_images, original_images_tensors = load_images_from_folder(
-    'data/dan-al')
+    'data copy/dan-al')
 
 pixels, pixels_tensors = load_images_from_folder(
     'data/pixel')
@@ -205,12 +196,16 @@ for i in range(n):
     # psp50_losses[i] = pixel_loss(original_images[i], psp50s[i])
     # restyle0_losses[i] = pixel_loss(original_images[i], restyle0s[i])
     # restyle50_losses[i] = pixel_loss(original_images[i], restyle50s[i])
-
-    pixels_losses[i] = 1-cosine_distance(original_images[i], pixels[i])
-    psp0_losses[i] = 1-cosine_distance(original_images[i], psp0s[i])
-    psp50_losses[i] = 1-cosine_distance(original_images[i], psp50s[i])
-    restyle0_losses[i] = 1-cosine_distance(original_images[i], restyle0s[i])
-    restyle50_losses[i] = 1-cosine_distance(original_images[i], restyle50s[i])
+    if(i < n/2):
+        pixels_losses[i] = 1 - \
+            cosine_distance(original_images[i], original_images[0])
+    else:
+        pixels_losses[i] = 1 - \
+            cosine_distance(original_images[i], original_images[26])
+    # psp0_losses[i] = 1-cosine_distance(original_images[i], psp0s[i])
+    # psp50_losses[i] = 1-cosine_distance(original_images[i], psp50s[i])
+    # restyle0_losses[i] = 1-cosine_distance(original_images[i], restyle0s[i])
+    # restyle50_losses[i] = 1-cosine_distance(original_images[i], restyle50s[i])
 
     # pixels_losses[i] = loss_fn_vgg(original_images_tensors[i], pixels_tensors[i])
     # psp0_losses[i] = loss_fn_vgg(original_images_tensors[i], psp0s_tensors[i])
@@ -223,7 +218,7 @@ for i in range(n):
     #restyle50_losses[i] = bluryness(restyle50s[i])
 
     #id_losses[index] = 1-cosine_distance(original_image, generated_img)
-    #l_pips_losses[index] = loss_fn_vgg(
+    # l_pips_losses[index] = loss_fn_vgg(
     #    original_image_tensor, compared_images_tensors[index])
 
 fig, ax = plt.subplots()
@@ -232,11 +227,12 @@ fig.set_figwidth(10)
 x = np.arange(0, n, 1)/(n-1)
 y = np.random.rand(n)
 
-ax.plot(x, pixels_losses, label="Pixel interpolation")
-ax.plot(x, psp0_losses, label="SG2 pSp")
-ax.plot(x, psp50_losses, label="SG2 pSp with image blending")
-ax.plot(x, restyle0_losses, label="SG3 ReStyle")
-ax.plot(x, restyle50_losses, label="SG3 ReStyle with image blending")
+ax.plot(x, pixels_losses,
+        label="Identity loss calculated against NN between first and last image")
+# ax.plot(x, psp0_losses, label="SG2 pSp")
+# ax.plot(x, psp50_losses, label="SG2 pSp with image blending")
+# ax.plot(x, restyle0_losses, label="SG3 ReStyle")
+# ax.plot(x, restyle50_losses, label="SG3 ReStyle with image blending")
 
 
 # for index, anotation_img in enumerate(compared_images):
