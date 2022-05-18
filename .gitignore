@@ -9,3 +9,8 @@ backend/data
 *.dat
 *.dat.bz
 data
+*.gif
+*.jpg
+*.png
+*.pdf
+*.tar.gz
