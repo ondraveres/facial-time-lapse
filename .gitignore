@@ -4,3 +4,8 @@ storage
 __pycache__
 .vscode
 *egg-info
+*t7
+backend/data
+*.dat
+*.dat.bz
+data
