@@ -328,7 +328,7 @@ def saveImagesFromGoogleSearch(phrase, number_of_images):
     urls = []
     for phrase in phrases:
         search_term = urllib.parse.quote(phrase.encode('utf8'))
-        url = f'https://customsearch.googleapis.com/customsearch/v1?cr=asd&cx=b0aeb7e24cc9a435d&q={search_term}&imgType=face&imgSize=MEDIUM&num={number_of_images}&safe=active&searchType=image&filter=1&key=AIzaSyAxeJGJ-oVB1S5QppevK64MvKWgn7Y-oDU&start=1'
+        url = f'https://customsearch.googleapis.com/customsearch/v1?cr=asd&cx=b0aeb7e24cc9a435d&q={search_term}&imgType=face&imgSize=MEDIUM&num={number_of_images}&safe=active&searchType=image&filter=1&key=#PUTYOURGCPKEYHERE&start=1'
         urls.append(url)
 
     results = boosted_requests(urls=urls)
